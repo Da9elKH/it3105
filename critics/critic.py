@@ -9,7 +9,7 @@ class Critic:
         pass
 
     # TODO: Should be renamed 'delta'
-    def td_error(self, reinforcement: float, from_state: State, to_state: State, done: bool) -> float:
+    def td_error(self, reinforcement: float, from_state: State, to_state: State, terminal: bool) -> float:
         pass
 
     def adjust(self, td_error: float):

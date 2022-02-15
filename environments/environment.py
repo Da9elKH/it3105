@@ -37,14 +37,15 @@ class ProblemEnvironment:
         """ Check if the problem has been solved """
         pass
 
-    # TODO: This is only a temp function
-    def has_succeeded(self) -> bool:
-        """ Check if the problem has been solved """
-        return self.__has_succeeded()
+    def __in_terminal_state(self) -> bool:
+        pass
+
+    def __has_timed_out(self) -> bool:
+        pass
 
     def is_finished(self) -> bool:
         """ Check if problem is solved """
-        return self.__has_succeeded() or self.__has_failed()
+        return self.__has_succeeded() or self.__has_failed() or self.__has_timed_out()
 
     def reinforcement(self) -> float:
         """ What is the reward for this episode """

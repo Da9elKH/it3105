@@ -9,19 +9,19 @@ import matplotlib.pylab as plt
 
 
 class CartPole(ProblemEnvironment):
-    def __init__(self, pole_length=0.5, pole_mass=0.1, gravity=-9.8, timestep=0.02, buckets=(4, 4, 12, 12)):
+    def __init__(self, pole_length=0.5, pole_mass=0.1, gravity=-9.8, timestep=0.02, buckets=None):
         super().__init__()
 
         self.__theta_limits = [-0.21, 0.21]
         self.__x_limits = [-2.4, 2.4]
 
         self.F = 10
-        self.T = 300  # Number of timesteps in one simulation
+        self.T = 300  # Number of time steps in one simulation
         self.mc = 1  # Mass of cart
         self.mp = pole_mass  # Mass of pole
         self.mt = self.mp + self.mc
         self.g = gravity  # Gravity
-        self.t = timestep  # The timestep for one simulation
+        self.t = timestep  # The time step for one simulation
         self.L = pole_length  # Length of pole
 
         self.episode_time_steps = {}
@@ -29,9 +29,13 @@ class CartPole(ProblemEnvironment):
         self.rounds = 0
 
         self.__state_shape = buckets
-        self.__state_constructor = StateConstructor(state_shape=self.__state_shape)
+        self.__state_constructor = StateConstructor(
+            categorical_state_shape=self.__state_shape,
+            binary_array=False
+        )
         self.reset()
 
+    """ STATE HANDLING """
     def reset(self) -> tuple[State, ActionList]:
         # State format: (x, dx, theta, dtheta)
         self.data = (0, 0, self.random_theta(), 0)
@@ -44,7 +48,7 @@ class CartPole(ProblemEnvironment):
         return round(random.uniform(self.__theta_limits[0] + e, self.__theta_limits[1] - e), 2)
 
     def state(self) -> State:
-        return self.__state_constructor(self.bucketize())
+        return self.__state_constructor(self.bucketize(), self.data)
 
         #x, dx, theta, dtheta = self.data
         #return x, dx, theta, dtheta
@@ -62,8 +66,9 @@ class CartPole(ProblemEnvironment):
             bucket.append(b_value)
         return tuple(bucket)
 
+    """ STATE SPACE """
     def input_space(self):
-        return len(self.__state_constructor(self.__state_shape).binary_array)
+        return len(self.__state_constructor(self.__state_shape, (0, 0, 0, 0)).array)
 
     def action_space(self) -> list[int]:
         # 0: Go left 1: Go right
@@ -72,6 +77,7 @@ class CartPole(ProblemEnvironment):
     def legal_actions(self) -> list[int]:
         return self.action_space()
 
+    """ ENVIRONMENT EXECUTION """
     def step(self, action: Action) -> tuple[State, Action, float, State, ActionList, bool]:
         assert self.data is not None, "You must call reset() before running simulation"
 
@@ -100,8 +106,39 @@ class CartPole(ProblemEnvironment):
         self.rounds += 1
         self.data = (x, dx, theta, dtheta)
 
-        return from_state, action, self.reinforcement(), self.state(), self.legal_actions(), self.is_finished()
+        return from_state, action, self.reinforcement(), self.state(), self.legal_actions(), self.__in_terminal_state()
 
+    def reinforcement(self) -> float:
+        if self.__has_failed():
+            return 0
+        return 1.0
+
+    """ STATE STATUS """
+    def __has_succeeded(self) -> bool:
+        return False
+
+    def __has_failed(self) -> bool:
+        x, _, theta, _ = self.data
+
+        if not (self.__theta_limits[0] <= theta <= self.__theta_limits[1]):
+            return True
+        elif not (self.__x_limits[0] <= x <= self.__x_limits[1]):
+            return True
+        else:
+            return False
+
+    def __in_terminal_state(self) -> bool:
+        return self.__has_succeeded() or self.__has_failed()
+
+    def __has_timed_out(self) -> bool:
+        if self.rounds >= self.T:
+            return True
+        return False
+
+    def is_finished(self) -> bool:
+        return self.__in_terminal_state() or self.__has_timed_out()
+
+    """ REPLAY """
     def store_training_metadata(self, last_episode, current_episode, current_step, state):
         self.episode_time_steps[current_episode] = current_step
         if last_episode:
@@ -131,34 +168,6 @@ class CartPole(ProblemEnvironment):
 
         #RenderWindow(600, 480, "Cart Pole Balancing", self.replay_states)
         #arcade.run()
-
-    def reinforcement(self) -> float:
-        if self.__has_failed():
-            return 0
-        return 1.0
-
-    def __has_succeeded(self) -> bool:
-        if self.rounds >= self.T:
-            return True
-        return False
-
-    # TODO: This is only a temp function
-    def has_succeeded(self) -> bool:
-        """ Check if the problem has been solved """
-        return self.__has_succeeded()
-
-    def __has_failed(self) -> bool:
-        x, _, theta, _ = self.data
-
-        if not (self.__theta_limits[0] <= theta <= self.__theta_limits[1]):
-            return True
-        elif not (self.__x_limits[0] <= x <= self.__x_limits[1]):
-            return True
-        else:
-            return False
-
-    def is_finished(self) -> bool:
-        return self.__has_failed() or self.__has_succeeded()
 
 class RenderWindow(arcade.Window):
     def __init__(self, width, height, title, states):

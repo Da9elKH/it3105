@@ -38,13 +38,13 @@ class Agent:
                 action = self.act.next_action(state, valid_actions)
 
                 # ENVIRONMENT: Do next action and receive reinforcement, save state in list
-                from_state, action, reinforcement, state, valid_actions, done = self.env.step(action)
+                from_state, action, reinforcement, state, valid_actions, terminal = self.env.step(action)
 
                 # ACTOR: Get next action and update eligibility
                 self.act.set_eligibility(from_state, action)
 
                 # CRITIC: Calculate TD-error and update eligibility
-                td_error = self.crt.td_error(reinforcement, from_state, state, done)
+                td_error = self.crt.td_error(reinforcement, from_state, state, terminal)
                 self.crt.set_eligibility(from_state)
 
                 # Adjustments for all state-action-pairs
@@ -55,53 +55,43 @@ class Agent:
                 i += 1
                 self.env.store_training_metadata(current_episode=episode, last_episode=last_episode, current_step=i, state=state)
 
-            self.crt.learn()
+            loss = self.crt.learn()
+            print(f"Episode: {episode}, steps: {i}, NN-loss: {loss}")
 
-            if self.env.has_succeeded():
-                win += 1
-            print(f"Episode: {episode}, steps: {i}, win: {self.env.has_succeeded()}")
-        print(f"Wins: {win}")
         self.env.replay(saps=self.act.get_saps(), values=self.crt.get_values())
 
 if __name__ == '__main__':
 
     """ CARTPOLE """
-    n_episodes = 300  # 1000
+    n_episodes = 500
     environment = CartPole(pole_length=0.5, pole_mass=0.1, gravity=-9.8, timestep=0.02, buckets=(5, 5, 6, 6))
     actor = Actor(
-        discount_factor=0.2,
+        discount_factor=0.7,
         trace_decay=0.8,
-        #learning_rate=DecayingVariable(
-        #    start=0.4,
-        #    end=0.001,
-        #    episodes=n_episodes,
-        #),
-        learning_rate=0.1,
+        learning_rate=0.01,
         epsilon=DecayingVariable(
             start=1.0,
-            end=0.01,
-            #decay=0.995,
+            end=0.001,
             episodes=n_episodes,
         ),
     )
-
+    """
     critic = NeuralNetworkCritic(
         discount_factor=0.7,
-        learning_rate=0.001,
+        learning_rate=0.003,
         input_size=environment.input_space(),
         hidden_size=(32, 32)
     )
     """
     critic = TableCritic(
         discount_factor=0.7,
-        trace_decay=0.6,
+        trace_decay=0.8,
         learning_rate=DecayingVariable(
-            start=0.6,
+            start=0.7,
             end=0.001,
             episodes=n_episodes,
         )
     )
-    """
 
 
     """ TOWER OF HANOI

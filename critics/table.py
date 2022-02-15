@@ -36,8 +36,8 @@ class TableCritic(Critic):
             self.__discount_factor * self.__trace_decay * self.__eligibility(state)
 
     """ CRITIC """
-    def td_error(self, reinforcement: float, from_state: State, to_state: State, done: bool) -> float:
-        return reinforcement + (self.__discount_factor * self.__value(to_state.binary_string))*(1-int(done)) - self.__value(from_state.binary_string)
+    def td_error(self, reinforcement: float, from_state: State, to_state: State, terminal: bool) -> float:
+        return reinforcement + (self.__discount_factor * self.__value(to_state.binary_string))*(1 - int(terminal)) - self.__value(from_state.binary_string)
 
     def __value(self, state: str):
         # Return, or create and return, the value of this state

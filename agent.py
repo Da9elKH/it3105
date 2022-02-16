@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     """ TOWER OF HANOI
     n_episodes = 500
-    environment = TowerOfHanoi(num_pegs=3, num_discs=4)
+    environment = TowerOfHanoi(num_pegs=5, num_discs=4)
     actor = Actor(
         discount_factor=0.95,
         trace_decay=0.5,
@@ -112,16 +112,16 @@ if __name__ == '__main__':
         discount_factor=0.95,
         learning_rate=0.03,
         input_size=environment.input_space(),
-        hidden_size=(12, 12, 12)
+        hidden_size=(32, 32)
     )
     critic = TableCritic(discount_factor=0.95, trace_decay=0.5, learning_rate=0.1)
     """
 
-    """ THE GAMBLER
-    n_episodes = 3000
+    """ THE GAMBLER 
+    n_episodes = 10000
     environment = TheGambler(win_probability=0.4, state_space=100)
     actor = Actor(
-        discount_factor=1,
+        discount_factor=0.95,
         trace_decay=0.2,
         learning_rate=0.4,
         epsilon=DecayingVariable(
@@ -137,7 +137,7 @@ if __name__ == '__main__':
         input_size=environment.input_space(),
         hidden_size=(32, 32)
     )
-    critic = TableCritic(discount_factor=1, trace_decay=0.2, learning_rate=0.01)
+    critic = TableCritic(discount_factor=0.95, trace_decay=0.2, learning_rate=0.01)
     """
 
     """ Training """

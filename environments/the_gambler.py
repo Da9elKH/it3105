@@ -14,14 +14,14 @@ class TheGambler(ProblemEnvironment):
         self.money = random.randint(1, state_space-1)
         self.win_probability = win_probability
 
-        self.__state_constructor = StateConstructor(state_shape=(state_space,))
+        self.__state_constructor = StateConstructor(categorical_state_shape=(state_space,))
 
     def reset(self) -> tuple[State, ActionList]:
         self.money = random.randint(1, self.state_space)
         return self.state(), self.legal_actions()
 
     def input_space(self):
-        return len(self.__state_constructor((self.state_space,)).binary_array)
+        return len(self.__state_constructor((self.state_space,)).array)
 
     def action_space(self) -> ActionList:
         """ Get the available actions for this game"""

@@ -14,7 +14,7 @@ class TowerOfHanoi(ProblemEnvironment):
         self.__pegs = {}
 
         self.__state_space = tuple([1]*self.__num_pegs*self.__num_discs)
-        self.__state_constructor = StateConstructor(state_shape=self.__state_space)
+        self.__state_constructor = StateConstructor(categorical_state_shape=self.__state_space)
 
         self.T = 300
         self.rounds = 0
@@ -23,7 +23,7 @@ class TowerOfHanoi(ProblemEnvironment):
         assert 2 <= self.__num_pegs <= 6, "Outside discs limitations"
 
     def input_space(self) -> int:
-        return len(self.__state_constructor(self.__state_space).binary_array)
+        return len(self.__state_constructor(self.__state_space).array)
 
     def action_space(self) -> list[tuple]:
         """ Get the available actions for this game"""
@@ -153,7 +153,7 @@ class RenderWindow(arcade.Window):
             state: State = self.states.pop()
             discs = dict([(i, []) for i in range(self.__num_pegs)])
 
-            for i, val in enumerate(state.binary_array):
+            for i, val in enumerate(state.array):
                 if not bool(val):
                     continue
 

@@ -9,7 +9,7 @@ import matplotlib.pylab as plt
 
 
 class CartPole(ProblemEnvironment):
-    def __init__(self, pole_length=0.5, pole_mass=0.1, gravity=-9.8, timestep=0.02, buckets=None):
+    def __init__(self, pole_length=0.5, pole_mass=0.1, gravity=-9.8, time_step=0.02, buckets=None):
         super().__init__()
 
         self.__theta_limits = [-0.21, 0.21]
@@ -21,7 +21,7 @@ class CartPole(ProblemEnvironment):
         self.mp = pole_mass  # Mass of pole
         self.mt = self.mp + self.mc
         self.g = gravity  # Gravity
-        self.t = timestep  # The time step for one simulation
+        self.t = time_step  # The time step for one simulation
         self.L = pole_length  # Length of pole
 
         self.episode_time_steps = {}
@@ -82,7 +82,7 @@ class CartPole(ProblemEnvironment):
         assert self.data is not None, "You must call reset() before running simulation"
 
         # This is different because the state is "rounded" version
-        x, dx, theta, dtheta = self.data
+        from_clean_state = x, dx, theta, dtheta = self.data
         from_state = self.state()
 
         # Calculate the direction and size of the force
@@ -95,7 +95,7 @@ class CartPole(ProblemEnvironment):
         # Accelerations
         temp = (B + self.mp*self.L * dtheta**2 * sintheta)/self.mt
         ddtheta = (self.g*sintheta-costheta*temp)/(self.L*(4.0/3.0 - (self.mp * costheta**2 / self.mt)))
-        ddx = (temp - self.mp * self.L * ddtheta * costheta)/self.mt
+        ddx = temp - (self.mp * self.L * ddtheta * costheta)/self.mt
 
         dtheta = dtheta + self.t*ddtheta
         dx = dx + self.t*ddx
@@ -106,11 +106,14 @@ class CartPole(ProblemEnvironment):
         self.rounds += 1
         self.data = (x, dx, theta, dtheta)
 
+        if self.rounds < 250 and self.__in_terminal_state():
+            print(f"FAILED. Current state: {self.data}, from state: {from_clean_state}, action: {action}")
+
         return from_state, action, self.reinforcement(), self.state(), self.legal_actions(), self.__in_terminal_state()
 
     def reinforcement(self) -> float:
         if self.__has_failed():
-            return 0
+            return 0  # -1 på Table
         return 1.0
 
     """ STATE STATUS """

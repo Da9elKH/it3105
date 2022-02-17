@@ -5,7 +5,7 @@ import random
 import math
 import arcade
 import matplotlib.pylab as plt
-
+from scipy.stats import binned_statistic
 
 
 class CartPole(ProblemEnvironment):
@@ -24,7 +24,7 @@ class CartPole(ProblemEnvironment):
         self.t = time_step  # The time step for one simulation
         self.L = pole_length  # Length of pole
 
-        self.episode_time_steps = {}
+        self.__episode_time_steps = {}
         self.data = None
         self.rounds = 0
 
@@ -37,52 +37,56 @@ class CartPole(ProblemEnvironment):
 
     """ STATE HANDLING """
     def reset(self) -> tuple[State, ActionList]:
-        # State format: (x, dx, theta, dtheta)
+        """ Reset the parameters before next episode """
         self.data = (0, 0, self.random_theta(), 0)
         self.rounds = 0
-
-        return self.state(), self.action_space()
+        return self.state(), self.legal_actions()
 
     def random_theta(self) -> float:
-        e = 0.1 ** 10  # Small number to get open interval
-        return round(random.uniform(self.__theta_limits[0] + e, self.__theta_limits[1] - e), 2)
+        """ Calculate a random theta """
+        e = 0.1 ** 10  # Small number to avoid starting in a terminal state
+        return random.uniform(self.__theta_limits[0] + e, self.__theta_limits[1] - e)
 
     def state(self) -> State:
-        return self.__state_constructor(self.bucketize(), self.data)
+        """ Return the state representation """
+        return self.__state_constructor(self.__bins(), self.data)
 
-        #x, dx, theta, dtheta = self.data
-        #return x, dx, theta, dtheta
-        #return x > 0, dx > 0, theta > 0, dtheta > 0
-        #return round(x, 2), round(dx, 2), round(theta, 2), round(dtheta, 2)
+    def __bins(self) -> tuple[int]:
+        """ Function for bucketizing the state """
+        low = [self.__x_limits[0], -2, self.__theta_limits[0], -2]
+        high = [self.__x_limits[1], 2, self.__theta_limits[1], 2]
 
-    def bucketize(self) -> tuple[int]:
-        low = [self.__x_limits[0]*2, -2, self.__theta_limits[0]*2, -2]
-        high = [self.__x_limits[1]*2, 2, self.__theta_limits[1]*2, 2]
-        bucket = []
-        for i in range(len(self.data)):
-            scale = (self.data[i] + abs(low[i])) / (high[i] - low[i])
-            b_value = int(round((self.__state_shape[i] - 1) * scale))
-            b_value = min(self.__state_shape[i] - 1, max(0, b_value))
-            bucket.append(b_value)
-        return tuple(bucket)
+        bin_state = tuple(
+            [
+                binned_statistic(
+                    max(low[i], min(high[i], self.data[i])),
+                    max(low[i], min(high[i], self.data[i])),
+                    bins=self.__state_shape[i],
+                    range=(low[i], high[i])
+                )[2][0] for i in range(len(self.data))
+            ]
+        )
+
+        return bin_state
 
     """ STATE SPACE """
     def input_space(self):
+        """ Defining the input space for this environment (used for NN) """
         return len(self.__state_constructor(self.__state_shape, (0, 0, 0, 0)).array)
 
-    def action_space(self) -> list[int]:
-        # 0: Go left 1: Go right
+    def __action_space(self) -> list[int]:
         return [0, 1]
 
     def legal_actions(self) -> list[int]:
-        return self.action_space()
+        return self.__action_space()
 
     """ ENVIRONMENT EXECUTION """
     def step(self, action: Action) -> tuple[State, Action, float, State, ActionList, bool]:
+        """ Execute a step in the environment """
         assert self.data is not None, "You must call reset() before running simulation"
 
         # This is different because the state is "rounded" version
-        from_clean_state = x, dx, theta, dtheta = self.data
+        x, dx, theta, dtheta = self.data
         from_state = self.state()
 
         # Calculate the direction and size of the force
@@ -97,6 +101,7 @@ class CartPole(ProblemEnvironment):
         ddtheta = (self.g*sintheta-costheta*temp)/(self.L*(4.0/3.0 - (self.mp * costheta**2 / self.mt)))
         ddx = temp - (self.mp * self.L * ddtheta * costheta)/self.mt
 
+        # Update the state values
         dtheta = dtheta + self.t*ddtheta
         dx = dx + self.t*ddx
         theta = theta + self.t*dtheta
@@ -106,14 +111,11 @@ class CartPole(ProblemEnvironment):
         self.rounds += 1
         self.data = (x, dx, theta, dtheta)
 
-        if self.rounds < 250 and self.__in_terminal_state():
-            print(f"FAILED. Current state: {self.data}, from state: {from_clean_state}, action: {action}")
-
         return from_state, action, self.reinforcement(), self.state(), self.legal_actions(), self.__in_terminal_state()
 
     def reinforcement(self) -> float:
         if self.__has_failed():
-            return 0  # -1 på Table
+            return 0
         return 1.0
 
     """ STATE STATUS """
@@ -142,12 +144,14 @@ class CartPole(ProblemEnvironment):
         return self.__in_terminal_state() or self.__has_timed_out()
 
     """ REPLAY """
-    def store_training_metadata(self, last_episode, current_episode, current_step, state):
-        self.episode_time_steps[current_episode] = current_step
+    def store_training_metadata(self, last_episode, current_episode, current_step, state, reinforcement):
+        """ Stores data for later replay """
+        self.__episode_time_steps[current_episode] = current_step
         if last_episode:
             self.replay_states.append(self.data)
 
     def replay(self, saps, values):
+        """ Replay after the last episode """
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 
         last_episode = {}
@@ -156,22 +160,21 @@ class CartPole(ProblemEnvironment):
             last_episode[i] = self.replay_states[i][2]
             last_episode_x[i] = self.replay_states[i][1]
 
-        print(last_episode.items())
-        print(self.episode_time_steps.items())
-
         x, y = zip(*last_episode.items())
         ax1.plot(x, y)
 
         x, y = zip(*last_episode_x.items())
         ax2.plot(x, y)
 
-        x, y = zip(*self.episode_time_steps.items())
+        x, y = zip(*self.__episode_time_steps.items())
         ax3.plot(x, y)
         plt.show()
 
-        #RenderWindow(600, 480, "Cart Pole Balancing", self.replay_states)
-        #arcade.run()
+        RenderWindow(600, 480, "Cart Pole Balancing", self.replay_states)
+        arcade.run()
 
+
+""" RENDER CLASSES """
 class RenderWindow(arcade.Window):
     def __init__(self, width, height, title, states):
         super().__init__(width, height, title, update_rate=0.2)

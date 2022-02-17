@@ -13,14 +13,17 @@ class State:
 
     @property
     def tuple(self) -> tuple[int]:
+        """ Function for returning a tuple representation of the state """
         return self.__original_state
 
     @property
     def binary_string(self) -> str:
+        """ Function for returning a binary string representation of the state """
         return ''.join([format(s, f"0{self.__binary_state_shape[i]}b") for i, s in enumerate(self.__categorical_state)])
 
     @property
     def array(self) -> list[float]:
+        """ Function for returning an array representation of the state, used for NN """
         if self.__use_binary_array:
             return [float(s) for s in list(self.binary_string)]
         else:

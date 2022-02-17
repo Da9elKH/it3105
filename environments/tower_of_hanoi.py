@@ -1,38 +1,43 @@
 from environments.environment import ProblemEnvironment
 from itertools import permutations
 import arcade
+import arcade.gui
 import random
 from utils.state import State, StateConstructor
 from utils.types import ActionList, Action
-
+import matplotlib.pylab as plt
+import copy
 
 class TowerOfHanoi(ProblemEnvironment):
-    def __init__(self, num_pegs, num_discs):
+    def __init__(self, num_pegs, num_discs, view_update_rate=0.5):
         super().__init__()
         self.__num_pegs = num_pegs
         self.__num_discs = num_discs
         self.__pegs = {}
 
+        self.__episode_time_steps = {}
         self.__state_space = tuple([1]*self.__num_pegs*self.__num_discs)
         self.__state_constructor = StateConstructor(categorical_state_shape=self.__state_space)
 
         self.T = 300
         self.rounds = 0
+        self.__view_update_rate = view_update_rate
 
         assert 3 <= self.__num_pegs <= 5, "Outside pegs limitations"
         assert 2 <= self.__num_pegs <= 6, "Outside discs limitations"
 
     def input_space(self) -> int:
+        """ Input space is used to initialize the first input layer of NN"""
         return len(self.__state_constructor(self.__state_space).array)
 
-    def action_space(self) -> list[tuple]:
+    def __action_space(self) -> list[tuple]:
         """ Get the available actions for this game"""
         return list(permutations(range(self.__num_pegs), 2))
 
     def legal_actions(self) -> ActionList:
         """ Defines the legal actions in current state"""
         legal_actions = []
-        for from_peg, to_peg in self.action_space():
+        for from_peg, to_peg in self.__action_space():
             if not self.__pegs[from_peg]:
                 continue
             elif not self.__pegs[to_peg]:
@@ -45,88 +50,87 @@ class TowerOfHanoi(ProblemEnvironment):
     def step(self, action: Action) -> tuple[State, Action, float, State, ActionList, bool]:
         """ Run the next action in the given environment """
         from_state = self.state()
-
         from_peg = action[0]
         to_peg = action[1]
 
-        # Do action
         self.__pegs[to_peg].append(self.__pegs[from_peg].pop())
-
         self.rounds += 1
 
-        return from_state, action, self.reinforcement(), self.state(), self.legal_actions(), self.is_finished()
+        return from_state, action, self.reinforcement(), self.state(), self.legal_actions(), self.__in_terminal_state()
 
     def state(self) -> State:
         """ Returns a tuple containing the state of the game """
-
         result = [0]*self.__num_pegs*self.__num_discs
-
         for peg, discs in self.__pegs.items():
             for disc in discs:
                 result[(peg - 1)*self.__num_discs + (disc - 1)] = 1
-
         return self.__state_constructor(tuple(result))
-        """
-        result = {}
-        for peg, discs in self.__pegs.items():
-            for disc in discs:
-                result[disc] = peg
-
-        _, placements = zip(*sorted(result.items()))
-
-        return self.__state_constructor(placements)
-        # return tuple([tuple(x) for x in self.__pegs.values()])
-        """
 
     def reinforcement(self) -> float:
-        """
-            By giving negative reward we are optimizing for fewer moves
-        """
+        """ By giving negative reward we are optimizing for fewer moves """
         if self.__has_succeeded():
             return 1.0
         else:
-            return -0.1 # Used -1.0 for table-based
+            return -1.0
 
     def __has_failed(self) -> bool:
-        """ Check if problem failed (often outside of limits) """
-        return self.rounds >= self.T
+        """ Check if problem failed (in a terminal state) """
+        return False
 
     def __has_succeeded(self):
+        """ Check if problem is finished (in a terminal state) """
         for discs in [len(i) for i in list(self.__pegs.values())[1:]]:
             if discs == self.__num_discs:
                 return True
         return False
 
-    def has_succeeded(self) -> bool:
-        return self.__has_succeeded()
+    def __in_terminal_state(self) -> bool:
+        """ Check if problem is in a terminal state (used for bootstrapping)"""
+        return self.__has_succeeded() or self.__has_failed()
+
+    def __has_timed_out(self) -> bool:
+        """ Check if problem has timed out (used to e"""
+        if self.rounds >= self.T:
+            return True
+        return False
 
     def is_finished(self) -> bool:
-        return self.__has_succeeded() or self.__has_failed() or self.rounds >= self.T
+        """ Check if the episode is finished"""
+        return self.__in_terminal_state() or self.__has_timed_out()
 
     def reset(self) -> tuple[State, ActionList]:
-        """ Resets the environment to initial state """
+        """ Resets the environment parameters to initial state before next episode """
         self.__pegs.clear()
         self.rounds = 0
 
+        # Set all discs at the first peg in state
         for i in range(self.__num_pegs):
             self.__pegs[i] = []
         self.__pegs[0] = list(range(self.__num_discs, 0, -1))
 
         return self.state(), self.legal_actions()
 
-    def store_training_metadata(self, last_episode, current_episode, current_step, state):
+    def store_training_metadata(self, last_episode, current_episode, current_step, state, reinforcement):
+        """ This function stores metadata for later replay of the episode """
+        self.__episode_time_steps[current_episode] = current_step
         if last_episode:
             self.replay_states.append(state)
 
     def replay(self, saps, values):
-        render = RenderWindow(600, 480, "Tower of Hanoi", self.__num_pegs, self.__num_discs, self.replay_states)
+        """ This function runs at the end of the training for visualization """
+        x, y = zip(*self.__episode_time_steps.items())
+        plt.plot(x, y)
+        plt.show()
+
+        render = RenderWindow(600, 480, "Tower of Hanoi", self.__num_pegs, self.__num_discs, self.replay_states, self.__view_update_rate)
         render.setup()
         arcade.run()
 
 
+""" RENDERING OF TOWER OF HANOI"""
 class RenderWindow(arcade.Window):
-    def __init__(self, width, height, title, num_pegs, num_discs, states):
-        super().__init__(width, height, title, update_rate=0.5)
+    def __init__(self, width, height, title, num_pegs, num_discs, states, view_update_rate):
+        super().__init__(width, height, title, update_rate=view_update_rate)
         self.__num_pegs = num_pegs
         self.__num_discs = num_discs
 
@@ -136,20 +140,51 @@ class RenderWindow(arcade.Window):
         self.__pegs_list = arcade.SpriteList()
         self.__disc_list = arcade.SpriteList()
 
+        self.__states = states[::-1]
         self.states = states[::-1]
+        self.moves = ""
+
+        self.manager = arcade.gui.UIManager()
+        self.manager.enable()
+        self.v_box = arcade.gui.UIBoxLayout()
 
         arcade.set_background_color(arcade.color.WHITE)
+
+        replay_button = arcade.gui.UIFlatButton(text="Replay", width=100, height=40)
+        self.v_box.add(replay_button.with_space_around(bottom=20))
+
+        replay_button.on_click = self.on_click_start
+
+        self.manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                align_y=125,
+                child=self.v_box)
+        )
 
     def on_draw(self):
         arcade.start_render()
         arcade.draw_line(0, 50, self.width, 50, arcade.color.GRAY, line_width=5)
 
+        self.manager.draw()
+        arcade.draw_text('Moves: ' + str(self.moves), self.width/2 - 180/2, self.height - 50, arcade.color.BLACK, 20, 180, 'center')
+
         self.__pegs_list.draw()
         self.__disc_list.draw()
+
+    def on_click_start(self, event):
+        self.states = copy.deepcopy(self.__states)
+        self.moves = ""
 
     def on_update(self, delta_time):
         # Render Tower of Hanoi based on State
         if self.states:
+            if self.moves == "":
+                self.moves = 0
+            else:
+                self.moves += 1
+
             state: State = self.states.pop()
             discs = dict([(i, []) for i in range(self.__num_pegs)])
 
@@ -163,20 +198,6 @@ class RenderWindow(arcade.Window):
 
             for k in range(self.__num_pegs):
                 self.__pegs_objects[k].move_discs(dict(discs[k]))
-
-
-            """
-            for i in range(len(state)):
-                if isinstance(state[i], tuple):
-                    v = list(state[i])
-                else:
-                    v = [state[i]]
-
-                discs = {}
-                for k in v:
-                    discs[k] = self.__disc_objects[k]
-                self.__pegs_objects[i].move_discs(discs)
-            """
 
         self.__disc_list.update()
 

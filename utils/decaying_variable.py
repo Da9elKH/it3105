@@ -20,10 +20,13 @@ class DecayingVariable:
         self.__episode += 1
 
         if self.__episode >= self.__episodes:
+            # Returns the given end_value, or the lowest decayed value at the end of the episodes
             self.__current = self.__episodes_end_value if self.__episodes_end_value is not None else self.__end
         elif self.__linear:
+            # Linear decay based on equal steps
             self.__current = max(self.__end, min(self.__start, self.__current - self.__decay))
         else:
+            # Quadratic decay / Epsilon decay
             self.__current = max(self.__end, min(self.__start, self.__current * self.__decay))
 
         return self.__current

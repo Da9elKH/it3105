@@ -19,31 +19,38 @@ class TableCritic(Critic):
 
     """ ELIGIBILITIES """
     def clear(self):
+        """ Clear variables before next episode """
         self.__states_visited.clear()
         self.__eligibilities.clear()
         self.__learning_rate = self.__lr if isinstance(self.__lr, float) else self.__lr()
 
     def set_eligibility(self, state: State):
+        """ Set the latest visited state eligibility to 1 """
         self.__states_visited.add(state.binary_string)
         self.__eligibilities[state.binary_string] = 1
 
     def __eligibility(self, state: str):
+        """ Getter for eligibility that sets it to 0 if it doesn't exist """
         # Return, or create and return, the eligibility
         return self.__eligibilities.setdefault(state, 0)
 
     def __adjust_eligibility(self, state: str):
+        """ Adjustment function for eligibility for one state """
         self.__eligibilities[state] = \
             self.__discount_factor * self.__trace_decay * self.__eligibility(state)
 
     """ CRITIC """
     def td_error(self, reinforcement: float, from_state: State, to_state: State, terminal: bool) -> float:
-        return reinforcement + (self.__discount_factor * self.__value(to_state.binary_string))*(1 - int(terminal)) - self.__value(from_state.binary_string)
+        """ Returns delta for adjustments of critic and actor"""
+        target = (self.__discount_factor * self.__value(to_state.binary_string))*(1 - int(terminal))
+        return reinforcement + target - self.__value(from_state.binary_string)
 
     def __value(self, state: str):
-        # Return, or create and return, the value of this state
+        """ Return, or create and return, the value of this state """
         return self.__values.setdefault(state, random.uniform(0, 0.1))
 
     def __adjust_value(self, state: str, td_error: float):
+        """ Adjustment function for one state evaluation """
         self.__values[state] = \
             self.__value(state) + \
             self.__learning_rate * td_error * self.__eligibility(state)
@@ -55,5 +62,4 @@ class TableCritic(Critic):
             self.__adjust_eligibility(state)
 
     def get_values(self):
-        print("CRITIC ELIG", self.__eligibilities)
         return self.__values

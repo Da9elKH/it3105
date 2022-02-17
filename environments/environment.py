@@ -9,7 +9,7 @@ class ProblemEnvironment:
     def __init__(self):
         self.replay_states = []
 
-    def action_space(self) -> list[int]:
+    def __action_space(self) -> list[int]:
         """ Get the available actions for this game"""
         pass
 
@@ -38,9 +38,11 @@ class ProblemEnvironment:
         pass
 
     def __in_terminal_state(self) -> bool:
+        """ This is used to correctly bootstrap terminal states """
         pass
 
     def __has_timed_out(self) -> bool:
+        """ This is used if environment times out """
         pass
 
     def is_finished(self) -> bool:
@@ -55,9 +57,10 @@ class ProblemEnvironment:
         """ Resets the environment to initial state """
         pass
 
-    """ Used for printing after an environment is completed """
-    def store_training_metadata(self, last_episode, current_episode, current_step, state):
+    def store_training_metadata(self, last_episode, current_episode, current_step, state, reinforcement):
+        """ Used for printing after an environment is completed """
         pass
 
     def replay(self, saps, values):
+        """ Runs after all episodes """
         pass

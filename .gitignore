@@ -1,8 +1,9 @@
 /venv
-Assignment 1.zip
-
-environments/__pycache__/
-
+/.idea
+**/__pycache__/
+*.zip
 .DS_Store
+/Assignment 2
+/Assignment 3
 
-__pycache__/
+

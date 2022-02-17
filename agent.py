@@ -86,14 +86,14 @@ class Agent:
 
             # For batch learning if using neural network
             loss = self.crt.learn()
-            print(f"Episode: {episode}, steps: {i}, NN-loss: {loss}")
+            print(f"Episode: {episode}, steps: {i}")
 
         self.env.replay(saps=self.act.get_saps(), values=self.crt.get_values())
 
 
 if __name__ == '__main__':
     game = GameType.CART_POLE
-    critic = CriticType.NEURAL_NETWORK
+    critic = CriticType.TABLE
 
     #print(random.getstate())
 
@@ -162,12 +162,23 @@ if __name__ == '__main__':
     else:
         environment = TheGambler(win_probability=0.4, state_space=100, time_out=300)
         if critic == CriticType.NEURAL_NETWORK:
-            n_episodes = 5000
+            n_episodes = 1000
             critic = NeuralNetworkCritic(
                 discount_factor=1,
-                learning_rate=0.02,
+                learning_rate=0.003,
                 input_size=environment.input_space(),
-                hidden_size=(16, 16)
+                hidden_size=(64, 32, 16)
+            )
+            actor = Actor(
+                discount_factor=1,
+                trace_decay=0.2,
+                learning_rate=0.2,
+                epsilon=DecayingVariable(
+                    start=0.5,
+                    end=0.001,
+                    episodes=n_episodes,
+                    linear=False
+                ),
             )
         else:
             n_episodes = 100000
@@ -176,18 +187,17 @@ if __name__ == '__main__':
                 trace_decay=0.8,
                 learning_rate=0.03
             )
-
-        actor = Actor(
-            discount_factor=1,
-            trace_decay=0.8,
-            learning_rate=0.01,
-            epsilon=DecayingVariable(
-                start=1,
-                end=0.001,
-                episodes=n_episodes,
-                linear=False
-            ),
-        )
+            actor = Actor(
+                discount_factor=1,
+                trace_decay=0.8,
+                learning_rate=0.01,
+                epsilon=DecayingVariable(
+                    start=1,
+                    end=0.001,
+                    episodes=n_episodes,
+                    linear=False
+                ),
+            )
 
     agent = Agent(env=environment, act=actor, crt=critic)
     agent.actor_critic_model(n_episodes)

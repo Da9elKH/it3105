@@ -28,7 +28,7 @@ class TheGambler(ProblemEnvironment):
 
     def input_space(self):
         """ The size of the input space used for NN """
-        return len(self.binary_state())
+        return len(self.__binary_state())
 
     def legal_actions(self) -> ActionList:
         """ Defines the legal actions in current state"""
@@ -56,6 +56,7 @@ class TheGambler(ProblemEnvironment):
 
     def __binary_state(self) -> tuple:
         """ Function to create a binary state for NN """
+        #return tuple((float(self.money),))
         return tuple([1 if self.money == m else 0 for m in range(0, self.state_space + 1)])
 
     def state(self) -> State:
@@ -109,10 +110,11 @@ class TheGambler(ProblemEnvironment):
 
         x, y = zip(*enumerate(self.reinforcements))
         
-        N = 100
+        N = 10
         y_new = pd.Series(y).rolling(window=N).mean().iloc[N - 1:].values
         x_new = pd.Series(x).rolling(window=N).mean().iloc[N - 1:].values
 
         plt.plot(x_new, y_new)
         plt.show()
         """
+

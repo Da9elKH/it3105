@@ -1,11 +1,9 @@
-from environments.environment import ProblemEnvironment
-from itertools import permutations
-import arcade
 import random
 import matplotlib.pylab as plt
 from operator import itemgetter
 from utils.state import State, StateConstructor
 from utils.types import Action, ActionList
+from environments.environment import ProblemEnvironment
 
 
 class TheGambler(ProblemEnvironment):

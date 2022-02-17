@@ -1,6 +1,3 @@
-"""
-    INTERFACE FOR CRITIC TYPES
-"""
 from utils.state import State
 
 

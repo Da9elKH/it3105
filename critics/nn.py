@@ -32,7 +32,6 @@ class NeuralNetworkCritic(Critic):
 
     def td_error(self, reinforcement, from_state: State, to_state: State, terminal: bool):
         """ Calculate the delta for this given from_state, reward and to_state """
-
         # Convert all values to tensors
         from_state_values = tf.convert_to_tensor([from_state.array], dtype=tf.float32)
         to_state_values = tf.convert_to_tensor([to_state.array], dtype=tf.float32)

@@ -3,9 +3,6 @@ import random
 from typing import Union, Optional
 from utils.state import State
 from utils.types import Action, ActionList
-
-import numpy as np
-
 from utils.decaying_variable import DecayingVariable
 
 

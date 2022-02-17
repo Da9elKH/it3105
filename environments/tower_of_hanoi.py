@@ -8,6 +8,7 @@ from utils.types import ActionList, Action
 import matplotlib.pylab as plt
 import copy
 
+
 class TowerOfHanoi(ProblemEnvironment):
     def __init__(self, num_pegs, num_discs, view_update_rate=0.5, time_out=300):
         super().__init__()

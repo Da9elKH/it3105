@@ -1,6 +1,3 @@
-"""
-    INTERFACE FOR ENVIRONMENT TYPES
-"""
 from utils.state import State
 from utils.types import ActionList, Action
 

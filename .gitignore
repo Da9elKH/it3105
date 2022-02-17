@@ -4,3 +4,5 @@ Assignment 1.zip
 environments/__pycache__/
 
 .DS_Store
+
+__pycache__/

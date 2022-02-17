@@ -9,7 +9,7 @@ import matplotlib.pylab as plt
 import copy
 
 class TowerOfHanoi(ProblemEnvironment):
-    def __init__(self, num_pegs, num_discs, view_update_rate=0.5):
+    def __init__(self, num_pegs, num_discs, view_update_rate=0.5, time_out=300):
         super().__init__()
         self.__num_pegs = num_pegs
         self.__num_discs = num_discs
@@ -19,7 +19,7 @@ class TowerOfHanoi(ProblemEnvironment):
         self.__state_space = tuple([1]*self.__num_pegs*self.__num_discs)
         self.__state_constructor = StateConstructor(categorical_state_shape=self.__state_space)
 
-        self.T = 300
+        self.T = time_out
         self.rounds = 0
         self.__view_update_rate = view_update_rate
 

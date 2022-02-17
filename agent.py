@@ -92,13 +92,13 @@ class Agent:
 
 
 if __name__ == '__main__':
-    game = GameType.TOWER_OF_HANOI
-    critic = CriticType.TABLE
+    game = GameType.CART_POLE
+    critic = CriticType.NEURAL_NETWORK
 
     #print(random.getstate())
 
     if game == GameType.CART_POLE:
-        environment = CartPole(pole_length=0.5, pole_mass=0.1, gravity=-9.8, time_step=0.02, buckets=(5, 5, 5, 5))
+        environment = CartPole(pole_length=0.5, pole_mass=0.1, gravity=-9.8, time_step=0.02, buckets=(5, 5, 5, 5), view_update_rate=0.02, time_out=300)
 
         if critic == critic.NEURAL_NETWORK:
             n_episodes = 300
@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
     elif game == GameType.TOWER_OF_HANOI:
         n_episodes = 500
-        environment = TowerOfHanoi(num_pegs=3, num_discs=4, view_update_rate=0.5)
+        environment = TowerOfHanoi(num_pegs=3, num_discs=4, view_update_rate=0.5, time_out=300)
         actor = Actor(
             discount_factor=0.9,
             trace_decay=0.6,
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         )
 
     else:
-        environment = TheGambler(win_probability=0.4, state_space=100)
+        environment = TheGambler(win_probability=0.4, state_space=100, time_out=300)
         if critic == CriticType.NEURAL_NETWORK:
             n_episodes = 5000
             critic = NeuralNetworkCritic(

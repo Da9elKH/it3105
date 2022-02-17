@@ -9,17 +9,21 @@ from utils.types import Action, ActionList
 
 
 class TheGambler(ProblemEnvironment):
-    def __init__(self, win_probability, state_space=100):
+    def __init__(self, win_probability, state_space=100, time_out=300):
         self.state_space = state_space
         self.money = random.randint(1, state_space - 1)
         self.win_probability = win_probability
 
+        self.T = time_out
+        self.rounds = 0
         self.__state_constructor = StateConstructor(categorical_state_shape=(state_space,), binary_array=False)
         self.reinforcements = []
 
     def reset(self) -> tuple[State, ActionList]:
         """ Reset environment before each episode """
         self.money = random.randint(1, self.state_space - 1)
+        self.rounds = 0
+
         return self.state(), self.legal_actions()
 
     def input_space(self):
@@ -46,6 +50,8 @@ class TheGambler(ProblemEnvironment):
         else:
             self.money -= action
 
+        self.rounds += 1
+
         return from_state, action, self.reinforcement(), self.state(), self.legal_actions(), self.__in_terminal_state()
 
     def __binary_state(self) -> tuple:
@@ -71,10 +77,12 @@ class TheGambler(ProblemEnvironment):
         return self.__has_succeeded() or self.__has_failed()
 
     def __has_timed_out(self) -> bool:
+        if self.rounds >= self.T:
+            return True
         return False
 
     def is_finished(self) -> bool:
-        return self.__has_succeeded() or self.__has_failed()
+        return self.__has_succeeded() or self.__has_failed() or self.__has_timed_out()
 
     def store_training_metadata(self, last_episode, current_episode, current_step, state, reinforcement):
         """ This stores data for each step in each episode """

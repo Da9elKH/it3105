@@ -9,14 +9,14 @@ from scipy.stats import binned_statistic
 
 
 class CartPole(ProblemEnvironment):
-    def __init__(self, pole_length=0.5, pole_mass=0.1, gravity=-9.8, time_step=0.02, buckets=None):
+    def __init__(self, pole_length=0.5, pole_mass=0.1, gravity=-9.8, time_step=0.02, buckets=None, time_out=300, view_update_rate=None):
         super().__init__()
 
         self.__theta_limits = [-0.21, 0.21]
         self.__x_limits = [-2.4, 2.4]
 
         self.F = 10
-        self.T = 300  # Number of time steps in one simulation
+        self.T = time_out  # Number of time steps in one simulation
         self.mc = 1  # Mass of cart
         self.mp = pole_mass  # Mass of pole
         self.mt = self.mp + self.mc
@@ -27,6 +27,7 @@ class CartPole(ProblemEnvironment):
         self.__episode_time_steps = {}
         self.data = None
         self.rounds = 0
+        self.__view_update_rate = view_update_rate or time_step
 
         self.__state_shape = buckets
         self.__state_constructor = StateConstructor(
@@ -170,14 +171,14 @@ class CartPole(ProblemEnvironment):
         ax3.plot(x, y)
         plt.show()
 
-        RenderWindow(600, 480, "Cart Pole Balancing", self.replay_states)
+        RenderWindow(600, 480, "Cart Pole Balancing", self.replay_states, self.__view_update_rate)
         arcade.run()
 
 
 """ RENDER CLASSES """
 class RenderWindow(arcade.Window):
-    def __init__(self, width, height, title, states):
-        super().__init__(width, height, title, update_rate=0.2)
+    def __init__(self, width, height, title, states, view_update_rate):
+        super().__init__(width, height, title, update_rate=view_update_rate)
         arcade.set_background_color(arcade.color.WHITE)
 
         # Objects

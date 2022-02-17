@@ -1,8 +1,7 @@
 import tensorflow as tf
-import timeit
 from critics.critic import Critic
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten, Input
+from tensorflow.keras.layers import Dense
 from utils.state import State
 
 
@@ -41,8 +40,8 @@ class NeuralNetworkCritic(Critic):
 
         # Calculate target (to be stored for batch learning)
         target = reinforcement + self.__discount_factor * self.__model(to_state_values) * (1 - int(terminal))
-        self.__from_states.append(from_state_values)
-        self.__targets.append(target)
+        self.__from_states.append(from_state_values.numpy())
+        self.__targets.append(target.numpy())
 
         # Calculate delta
         delta = target - self.__model(from_state_values)

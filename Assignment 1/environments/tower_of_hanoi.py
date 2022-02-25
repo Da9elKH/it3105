@@ -25,7 +25,7 @@ class TowerOfHanoi(ProblemEnvironment):
         self.__view_update_rate = view_update_rate
 
         assert 3 <= self.__num_pegs <= 5, "Outside pegs limitations"
-        assert 2 <= self.__num_pegs <= 6, "Outside discs limitations"
+        assert 2 <= self.__num_discs <= 6, "Outside discs limitations"
 
     def input_space(self) -> int:
         """ Input space is used to initialize the first input layer of NN"""

@@ -71,7 +71,7 @@ class HexGame:
     def switch_player(self):
         self.current_player = self.players[0] if self.current_player == self.players[1] else self.players[1]
 
-    def step(self, move: tuple[int, int]):
+    def execute(self, move: tuple[int, int]):
         if move in self.legal_moves:
             shadow_move = (move[0] + 1, move[1] + 1)
             self.state[move] = self.current_player
@@ -132,13 +132,13 @@ class GameWindow(arcade.Window):
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
         if not self.agent:
             indices = self.renderer.indices_from_position(x, y)
-            self.game.step(indices)
+            self.game.execute(indices)
             self.draw_board()
 
     def on_update(self, delta_time):
         if self.agent and not self.game.is_game_over:
             action = self.agent.action(self.game.flat_state, self.game.legal_moves)
-            self.game.step(action)
+            self.game.execute(action)
             self.draw_board()
 
     def reset(self, _):

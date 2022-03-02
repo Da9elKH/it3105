@@ -13,10 +13,10 @@ class HexGame:
         self.player = 1
 
         # Generate states (shadow=for winning check, state=for pieces placement)
-        self.shadow_state = np.zeros((self.size + 2, self.size + 2))
+        self.state = np.zeros((self.size, self.size), dtype=np.int32)
+        self.shadow_state = np.zeros((self.size + 2, self.size + 2), dtype=np.int32)
         self.shadow_state[:, 0] = self.shadow_state[:, -1] = 1
         self.shadow_state[0, :] = self.shadow_state[-1, :] = 2
-        self.state = np.zeros((self.size, self.size))
         self.available_spots = set([(i, j) for i in range(0, self.size) for j in range(0, self.size)])
 
         # UnionFind for win checking
@@ -25,10 +25,10 @@ class HexGame:
 
     def reset(self):
         self.player = 1
-        self.shadow_state = np.zeros((self.size + 2, self.size + 2))
+        self.state = np.zeros((self.size, self.size), dtype=np.int32)
+        self.shadow_state = np.zeros((self.size + 2, self.size + 2), dtype=np.int32)
         self.shadow_state[:, 0] = self.shadow_state[:, -1] = 1
         self.shadow_state[0, :] = self.shadow_state[-1, :] = 2
-        self.state = np.zeros((self.size, self.size))
         self.available_spots = set([(i, j) for i in range(0, self.size) for j in range(0, self.size)])
         self.setup_union_find()
 
@@ -59,6 +59,17 @@ class HexGame:
         else:
             return []
 
+    @property
+    def result(self):
+        if self.player == 1:
+            return 1
+        else:
+            return -1
+
+    @property
+    def flat_state(self):
+        return [self.player, *self.state.flatten()]
+
     def switch_player(self):
         self.player = 1 if self.player == 2 else 2
 
@@ -84,13 +95,14 @@ class HexGame:
 
 
 class GameWindow(arcade.Window):
-    def __init__(self, width, height, view_update_rate=1.0):
+    def __init__(self, width, height, view_update_rate=0.2):
         super().__init__(width, height, "Hex Game", update_rate=view_update_rate)
         arcade.set_background_color(arcade.color.WHITE)
 
         self.renderer = None
         self.engine = None
         self.change = True
+        self.agent = None
 
         arcade.set_background_color(arcade.color.WHITE)
 
@@ -113,12 +125,13 @@ class GameWindow(arcade.Window):
                 child=self.v_box)
         )
 
-    def setup(self, engine):
+    def setup(self, engine, agent):
         self.engine = engine
         self.renderer: StateRendering = StateRendering(
             state=self.engine.state,
             window=(self.width, self.height)
         )
+        self.agent = agent
         self.draw_board()
 
     def on_draw(self):
@@ -134,9 +147,9 @@ class GameWindow(arcade.Window):
         self.draw_board()
 
     def on_update(self, delta_time):
-        if self.engine.player == 2:
-            indices = random.choice(self.engine.legal_moves)
-            self.engine.step(indices)
+        if self.agent and not self.engine.winner:
+            action = self.agent.action(self.engine.flat_state, self.engine.legal_moves)
+            self.engine.step(action)
             self.draw_board()
 
     def reset(self, event):
@@ -170,6 +183,16 @@ class GameWindow(arcade.Window):
 
         # Set all weights to 1 for all edges in the graph
         nx.set_edge_attributes(graph, 1, "weight")
+
+        # Set boarder edges to lower weight to get correct path
+        for i in range(0, self.engine.size + 1):
+            # BLUE
+            nx.set_edge_attributes(graph, {((0, i), (0, i+1)): {"weight": 0}})
+            nx.set_edge_attributes(graph, {((self.engine.size + 1, i), (self.engine.size + 1, i+1)): {"weight": 0}})
+
+            # RED
+            nx.set_edge_attributes(graph, {((i, 0), (i+1, 0)): {"weight": 0}})
+            nx.set_edge_attributes(graph, {((i, self.engine.size + 1), (i+1, self.engine.size + 1)): {"weight": 0}})
 
         # Get the cluster with all points included in the path between start and end
         cluster = self.engine.union_find.component("start")

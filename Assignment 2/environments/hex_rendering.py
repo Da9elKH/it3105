@@ -146,19 +146,6 @@ class StateRendering:
                                  line_width=self._boarder_width,
                                  color=arcade.color_from_hex_string(RED_COLOR))
 
-        """
-        centers = []
-        for k, hexagon in self.hexagons.items():
-            if self.state[k] > 0:
-                centers.append(hexagon.center)
-
-        if len(centers) > 1:
-            for i in range(0, len(centers) - 1):
-                arcade.draw_line(centers[i][0], centers[i][1], centers[i+1][0], centers[i+1][1],
-                                 line_width=5,
-                                 color=arcade.color.GREEN)
-        """
-
     def hover(self, x, y, player):
         self._hover_indices = self.indices_from_position(x, y)
         self._hover_player = player

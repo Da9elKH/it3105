@@ -7,6 +7,8 @@ import networkx as nx
 import math
 from agents.agent import Agent
 from unionfind import UnionFind
+from misc.state_manager import StateManager
+from copy import deepcopy
 
 RED_COLOR = "fc766a"
 RED_COLOR_LIGHT = "fed1cd"
@@ -14,14 +16,15 @@ BLUE_COLOR = "5b84b1"
 BLUE_COLOR_LIGHT = "bacbde"
 
 
-class HexGame:
+class HexGame(StateManager):
     def __init__(self, size=5, players=(1, 2)):
+        super().__init__()
         self.size = size
         self.players = players
-        self.current_player, self.state, self._shadow_state, self._union_find = self.init_values()
+        self.current_player, self.state, self._shadow_state, self._union_find, self._is_game_over = self.init_values()
 
     def reset(self):
-        self.current_player, self.state, self._shadow_state, self._union_find = self.init_values()
+        self.current_player, self.state, self._shadow_state, self._union_find, self._is_game_over = self.init_values()
 
     def init_values(self):
         state = np.zeros((self.size, self.size), dtype=np.int32)
@@ -40,7 +43,7 @@ class HexGame:
             union_find[self.players[1]].union("start", (0, i))
             union_find[self.players[1]].union("end", (self.size + 1, i))
 
-        return self.players[0], state, shadow_state, union_find
+        return self.players[0], state, shadow_state, union_find, False
 
     @property
     def union_find(self) -> UnionFind:
@@ -57,6 +60,12 @@ class HexGame:
         else:
             return []
 
+    def legal_moves_binary(self) -> list[int, ...]:
+        legal_moves = np.where(self.state == 0)
+        legal_moves_array = np.zeros((self.size, self.size), dtype=np.int32)
+        legal_moves_array[legal_moves] = 1
+        return legal_moves_array.flatten().tolist()
+
     @property
     def result(self):
         if self.current_player == 1:
@@ -67,6 +76,9 @@ class HexGame:
     @property
     def flat_state(self):
         return [self.current_player, *self.state.flatten()]
+
+    def copy(self) -> StateManager:
+        return deepcopy(self)
 
     def switch_player(self):
         self.current_player = self.players[0] if self.current_player == self.players[1] else self.players[1]
@@ -80,6 +92,10 @@ class HexGame:
 
             if not self.is_game_over:
                 self.switch_player()
+
+            return self.copy()
+        else:
+            return self
 
     def _union_neighbors(self, move: tuple[int, int]):
         r, c = move
@@ -137,7 +153,7 @@ class GameWindow(arcade.Window):
 
     def on_update(self, delta_time):
         if self.agent and not self.game.is_game_over:
-            action = self.agent.action(self.game.flat_state, self.game.legal_moves)
+            action = self.agent.action(self.game.flat_state, self.game.legal_moves, self.game)
             self.game.execute(action)
             self.draw_board()
 

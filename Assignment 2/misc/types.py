@@ -1,0 +1,1 @@
+Move = tuple[int, int]

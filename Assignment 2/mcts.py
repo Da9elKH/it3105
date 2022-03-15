@@ -8,6 +8,7 @@ import graphviz
 from copy import copy
 import time
 from actor import Actor
+import math
 
 TNode = TypeVar("TNode", bound="Node")
 
@@ -46,9 +47,9 @@ class MCTSAgent:
 
     """ POLICIES """
     @staticmethod
-    def _tree_policy(nodes: list[Node], environment: StateManager, c=1.0):
+    def _tree_policy(nodes: list[Node], c=1.0):
         move_values = [node.value(c=c) for node in nodes]
-        best_node_index = np.argmax(move_values) # if environment.current_player == 1 else np.argmin(move_values)
+        best_node_index = np.argmax(move_values)
         node = nodes[best_node_index]
         return node
 
@@ -78,6 +79,8 @@ class MCTSAgent:
             self.backup(node, winner)
             num_rollouts += 1
 
+        print(num_rollouts)
+
         return self.distribution, self.best_move
 
     def selection(self, c=1.0):
@@ -89,7 +92,7 @@ class MCTSAgent:
         children = node.children
 
         while len(children) != 0:
-            node = self._tree_policy(children, environment, c=c)
+            node = self._tree_policy(children, c=c)
             children = node.children
             environment.execute(node.move)
 
@@ -147,13 +150,18 @@ class MCTSAgent:
             dist[index] = v
 
         # Normalize the distribution
-        dist = dist/sum(dist)
+        dist /= sum(dist)
         return dist
 
     @property
-    def best_move(self):
+    def best_move(self, greedy=False):
+        distribution = self.distribution
+        if greedy:
+            value = np.max(distribution)
+        else:
+            value = np.random.choice(distribution, p=distribution)
         return self.environment.transform_binary_move_index_to_move(
-            random.choice(np.argwhere(self.distribution == np.max(self.distribution)).flatten()))
+                random.choice(np.argwhere(distribution == value).flatten()))
 
     def move(self, move: Move):
         for child in self.root.children:

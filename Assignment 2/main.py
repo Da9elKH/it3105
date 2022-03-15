@@ -9,9 +9,9 @@ from tqdm import tqdm
 if __name__ == "__main__":
 
     batches = 25
-    #buffer = BufferAgent()
+    buffer = BufferAgent()
 
-    env = HexGame(size=4)
+    env = HexGame(size=5)
     act = Actor(
         input_size=len(env.flat_state),
         output_size=len(env.legal_binary_moves),
@@ -19,12 +19,13 @@ if __name__ == "__main__":
         learning_rate=0.001
     )
     mcts = MCTSAgent(environment=env, actor=act)
-    #window = GameWindow(width=1000, height=600, game=env.copy(), agent=buffer, view_update_rate=2.0)
+    window = GameWindow(width=1000, height=600, game=env.copy(), agent=buffer, view_update_rate=2.0)
 
+    # Form for queue med size=1000 ?
     RBUF_input = []
     RBUF_target = []
 
-    for i in tqdm(range(batches)):
+    for i in range(batches):
         mcts.reset()
         env.reset()
 
@@ -33,14 +34,14 @@ if __name__ == "__main__":
 
         while not env.is_game_over:
             # Run MCTS
-            distribution, best_move = mcts.search(time_budget=2.0, epsilon=0.5, c=0.9)
+            distribution, best_move = mcts.search(time_budget=5.0, epsilon=0.05, c=0.9)
 
             # Format distribution to be viewed in game board
-            #meta_dist = {index: str(round(v * 100, 2)) + "%" for index, v in np.ndenumerate(distribution.reshape(env.state.shape))}
+            meta_dist = {index: str(round(v * 100, 2)) + "%" for index, v in np.ndenumerate(distribution.reshape(env.state.shape))}
 
             # Buffer for replay
-            #buffer.add_distribution(meta_dist)
-            #buffer.add_move(best_move)
+            buffer.add_distribution(meta_dist)
+            buffer.add_move(best_move)
 
             # Add to buffer
             RBUF_input.append(mcts.environment.flat_state)
@@ -52,8 +53,19 @@ if __name__ == "__main__":
 
         # Train actor on game played
         act.train(RBUF_input, RBUF_target)
+        window.run()
 
     model_name = lambda size, batch: f"S{size}_B{batch}"
     act.save_model(suffix=model_name(env.size, batches))
 
     #window.run()
+
+
+    # Notes
+    """
+    Notes
+    
+    - Residual Neural Network
+    - Plane 1 = Current player, Plane 2 = Motsatt spiller ()
+    
+    """

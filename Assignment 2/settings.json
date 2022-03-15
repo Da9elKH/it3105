@@ -1,0 +1,15 @@
+{
+  "hex": {
+    "size": 5
+  },
+  "actor": {
+    "learning_rate": 0.001,
+    "hidden_layers": [200, 100],
+    "optimizer": "ADAM",
+    "activation": "RELU"
+  },
+  "mcts": {
+    "rollout_epsilon": 1.0,
+    "selection_exploration": 0.9
+  }
+}

@@ -1,9 +1,13 @@
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
-from tensorflow.keras.losses import MeanSquaredError
+from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import load_model
+from misc.state_manager import StateManager
 import numpy as np
+from os import path
 
+MODELS_FOLDER = "models/"
 
 class Actor:
     def __init__(self, input_size: int, output_size: int, hidden_size: tuple[int, ...], learning_rate: float):
@@ -20,21 +24,27 @@ class Actor:
         for v in self.hidden_size:
             model.add(Dense(v, activation="relu"))
         model.add(Dense(self.output_size, activation="softmax"))
-        model.compile(optimizer=Adam(learning_rate=self._learning_rate), loss=MeanSquaredError(), run_eagerly=True)
+        model.compile(optimizer=Adam(learning_rate=self._learning_rate), loss=CategoricalCrossentropy(), metrics=["accuracy"])
         return model
 
-    def action(self, state, legal_actions, game):
-        actions = self.nn(np.array([state]))[0].numpy()
-        actions = actions * game.legal_moves_binary()
-        return np.unravel_index(np.argmax(actions), shape=game.state.shape)
+    def best_move(self, environment: StateManager):
+        props = self.nn(np.array([environment.flat_state]))[0].numpy()
+        props = props * environment.legal_binary_moves
+        props = props / sum(props)
+        return environment.transform_binary_move_index_to_move(binary_move_index=np.argmax(props))
 
-    def train(self, x: list[int], y: list[int]):
-        self.nn.fit(np.array(x), np.array(y), verbose=0)
+    def train(self, x, y):
+        self.nn.train_on_batch(np.array(x), np.array(y))
 
+    def save_model(self, suffix):
+        num = 1
+        name = lambda n: "(%d) " % n + suffix + ".h5"
 
-if __name__ == "__main__":
-    from hex import HexGame
+        if self.nn is not None:
+            while path.exists(MODELS_FOLDER + name(num)):
+                num += 1
+            self.nn.save(MODELS_FOLDER + name(num))
+        return name(num)
 
-    game = HexGame(size=5)
-    actor = Actor(input_size=len(game.flat_state), hidden_size=(50, 50), output_size=25, learning_rate=0.03)
-    print(actor.action(game.flat_state, game.legal_moves, game))
+    def load_saved_model(self, name):
+        self.nn = load_model(MODELS_FOLDER + name)

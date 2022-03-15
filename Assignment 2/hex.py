@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Union
 
 import arcade
@@ -53,18 +54,24 @@ class HexGame(StateManager):
     def is_game_over(self) -> bool:
         return self.union_find.connected("start", "end")
 
+    """ MOVES """
     @property
     def legal_moves(self) -> list[tuple[int, int]]:
-        if not self.is_game_over:
-            return [tuple(x) for x in np.argwhere(self.state == 0).tolist()]
-        else:
+        if self.is_game_over:
             return []
+        return [tuple(x) for x in np.argwhere(self.state == 0).tolist()]
 
-    def legal_moves_binary(self) -> list[int, ...]:
-        legal_moves = np.where(self.state == 0)
-        legal_moves_array = np.zeros((self.size, self.size), dtype=np.int32)
-        legal_moves_array[legal_moves] = 1
-        return legal_moves_array.flatten().tolist()
+    @property
+    def legal_binary_moves(self):
+        return np.logical_not(self.state).astype(np.int32).flatten().tolist()
+
+    #@lru_cache
+    def transform_move_to_binary_move_index(self, move: tuple[int, int]) -> int:
+        return move[0] * self.size + move[1]
+
+    #@lru_cache
+    def transform_binary_move_index_to_move(self, binary_move_index: int) -> tuple[int, int]:
+        return np.unravel_index(binary_move_index, shape=self.state.shape)
 
     @property
     def result(self):
@@ -75,13 +82,19 @@ class HexGame(StateManager):
 
     @property
     def flat_state(self):
-        return [self.current_player, *self.state.flatten()]
+        bits = lambda s: format(s, f"0{2}b")
+        state = [self.current_player, *self.state.flatten()]
+        return np.array([float(s) for s in list(''.join([bits(s) for s in state]))], dtype=np.int32)
 
     def copy(self) -> StateManager:
         return deepcopy(self)
 
+    @property
+    def next_player(self):
+        return self.players[0] if self.current_player == self.players[1] else self.players[1]
+
     def switch_player(self):
-        self.current_player = self.players[0] if self.current_player == self.players[1] else self.players[1]
+        self.current_player = self.next_player
 
     def execute(self, move: tuple[int, int]):
         if move in self.legal_moves:
@@ -92,10 +105,6 @@ class HexGame(StateManager):
 
             if not self.is_game_over:
                 self.switch_player()
-
-            return self.copy()
-        else:
-            return self
 
     def _union_neighbors(self, move: tuple[int, int]):
         r, c = move
@@ -114,23 +123,37 @@ class GameWindow(arcade.Window):
         super().__init__(width, height, "Hex Game", update_rate=view_update_rate)
         arcade.set_background_color(arcade.color.WHITE)
 
+        self._autoplay = False
         self.change = True
         self.game = game
         self.agent = agent
+        self._agent = None
         self.renderer = StateRendering(state=self.game.state, window=(self.width, self.height))
+
+        self.state_meta = {}
+        for location in self.renderer.hexagons.keys():
+            self.state_meta[location] = ""
 
         # Button
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
         self.v_box = arcade.gui.UIBoxLayout()
         replay_button = arcade.gui.UIFlatButton(text="Reset", width=100, height=30)
+        autoplay_button = arcade.gui.UIFlatButton(text="Autoplay", width=100, height=30)
+        next_button = arcade.gui.UIFlatButton(text="Next", width=100, height=30)
+
+        self.v_box.add(next_button.with_space_around(bottom=20))
         self.v_box.add(replay_button.with_space_around(bottom=20))
+        self.v_box.add(autoplay_button.with_space_around(bottom=20))
         replay_button.on_click = self.reset
+        autoplay_button.on_click = self.autoplay
+        next_button.on_click = self.next_move
+
         self.manager.add(
             arcade.gui.UIAnchorWidget(
                 anchor_x="center_x",
                 anchor_y="center_y",
-                align_y=-self.height/2+20,
+                align_y=-self.height/2+75,
                 align_x=self.width/2-75,
                 child=self.v_box)
         )
@@ -152,21 +175,54 @@ class GameWindow(arcade.Window):
             self.draw_board()
 
     def on_update(self, delta_time):
-        if self.agent and not self.game.is_game_over:
-            action = self.agent.action(self.game.flat_state, self.game.legal_moves, self.game)
-            self.game.execute(action)
-            self.draw_board()
+        if self._autoplay:
+            self.next_move(None)
 
     def reset(self, _):
+        self._autoplay = False
         self.game.reset()
         self.renderer = StateRendering(state=self.game.state, window=(self.width, self.height))
+        self.state_meta = {}
+        for location in self.renderer.hexagons.keys():
+            self.state_meta[location] = ""
+        self.agent = deepcopy(self._agent)
         self.draw_board()
+
+    def autoplay(self, _):
+        self._autoplay = not self._autoplay
+
+    def next_move(self, _):
+        if self._agent is None:
+            self._agent = deepcopy(self.agent)
+
+        if self.agent and not self.game.is_game_over:
+            action, meta = self.agent.action(self.game.flat_state, self.game.legal_moves, self.game)
+
+            if meta is not None:
+                for location, value in meta.items():
+                    self.state_meta[location] = value
+            if action is not None:
+                self.game.execute(action)
+            self.draw_board()
 
     def draw_board(self):
         arcade.start_render()
+
+        # Render state meta info
+        for location, hexagon in self.renderer.hexagons.items():
+            arcade.draw_text(
+                str(self.state_meta[location]),
+                hexagon.center[0]-10,
+                hexagon.center[1],
+                arcade.color.GRAY,
+                9,
+                50,
+                'left'
+            )
         self.renderer.draw()
         self.manager.draw()
         arcade.draw_text('Win: ' + str(self.game.is_game_over), 20, 20, arcade.color.BLACK, 15, 180, 'left')
+
         if self.game.is_game_over:
             self.draw_winner_line()
         arcade.finish_render()

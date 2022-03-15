@@ -26,6 +26,22 @@ class StateManager(ABC, Generic[TStateManager]):
 
     @property
     @abstractmethod
+    def legal_binary_moves(self) -> list[int]:
+        """ Returns a list of ones and zeros, where ones are legal moves """
+        pass
+
+    @abstractmethod
+    def transform_binary_move_index_to_move(self, binary_move_index: int) -> Move:
+        """ Returns a move from a binary move index """
+        pass
+
+    @abstractmethod
+    def transform_move_to_binary_move_index(self, move: Move) -> int:
+        """ Returns a binary move index from a move"""
+        pass
+
+    @property
+    @abstractmethod
     def result(self) -> int:
         """ Returns the game result from first player perspective """
         pass
@@ -39,6 +55,12 @@ class StateManager(ABC, Generic[TStateManager]):
     @abstractmethod
     def execute(self, move: Move) -> None:
         """ Executes the move for the current player on the board """
+        pass
+
+    @property
+    @abstractmethod
+    def next_player(self) -> int:
+        """ Returns the next player to play """
         pass
 
     @abstractmethod

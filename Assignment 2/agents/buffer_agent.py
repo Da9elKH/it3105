@@ -1,5 +1,6 @@
 from .agent import Agent
 
+# TODO: FIX THIS
 
 class BufferAgent(Agent):
     def __init__(self):
@@ -31,3 +32,6 @@ class BufferAgent(Agent):
 
     def add_distribution(self, distribution):
         self.distribution_buffer.append(distribution)
+
+    def distribution(self):
+        pass

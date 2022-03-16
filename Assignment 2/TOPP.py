@@ -1,30 +1,44 @@
+from agents.agent import Agent
+from agents.ann_agent import ANNAgent
+from agents.buffer_agent import BufferAgent
+from ann import Network
+from hex import HexGame, GameWindow
+
+
 class TOPP:
-    def __init__(self):
-        pass
+    def __init__(self, environment: HexGame):
+        self.environment = environment
+
+    def tournament(self, player: Agent, opponent: Agent, rounds=50):
+        stats = {}
+        for i in range(rounds):
+            print(f"Playing round {i}")
+            result, winner = self.run_game(player, opponent)
+            print(f"--> Winner: {'Opponent' if winner == 2 else 'Player'}")
+            stats[i] = {"result": result, "winner": winner}
+
+        print(stats)
+
+    def run_game(self, player: Agent, opponent: Agent):
+        buffer = BufferAgent()
+        window = GameWindow(width=1000, height=600, game=self.environment.copy(), agent=buffer, view_update_rate=2.0)
+
+        while not self.environment.is_game_over:
+            if self.environment.current_player == 1:
+                move = player.get_move(greedy=True)
+            else:
+                move = opponent.get_move(greedy=True)
+            self.environment.execute(move)
+            buffer.add_move(move)
+
+        window.run()
+
+        return self.environment.result, self.environment.current_player
 
 
 if __name__ == "__main__":
-    from actor import Actor
-    from hex import HexGame, GameWindow
-    from agents.buffer_agent import BufferAgent
-
     env = HexGame(size=4)
-    act = Actor(
-        input_size=len(env.flat_state),
-        output_size=len(env.legal_binary_moves),
-        hidden_size=(200, 100),
-        learning_rate=0.001
-    )
-    act.load_saved_model("(1) S4_B25.h5")
-    buffer = BufferAgent()
-    window = GameWindow(width=1000, height=600, game=env.copy(), agent=buffer, view_update_rate=2.0)
-
-    env.execute((0, 0))
-    buffer.add_move((0, 0))
-
-    while not env.is_game_over:
-        move = act.best_move(env)
-        env.execute(move)
-        buffer.add_move(move)
-
-    window.run()
+    topp = TOPP(environment=env)
+    player = ANNAgent(environment=env, network=Network.from_file("(1) S4_B90.h5"))
+    opponent = ANNAgent(environment=env, network=Network.from_file("(1) S4_B0.h5"))
+    topp.tournament(player, opponent, 100)

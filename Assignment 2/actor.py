@@ -9,6 +9,7 @@ from os import path
 
 MODELS_FOLDER = "models/"
 
+
 class Actor:
     def __init__(self, input_size: int, output_size: int, hidden_size: tuple[int, ...], learning_rate: float):
         self.input_size = input_size

@@ -1,49 +1,28 @@
 from misc.state_manager import StateManager
+from actor import Actor
+from node import Node
 from misc.types import Move
-from collections import defaultdict
-from typing import TypeVar, Generic, Optional
+from misc.state_manager import StateManager
+from agents.agent import Agent
 import random
 import numpy as np
-import graphviz
-from copy import copy
 import time
-from actor import Actor
-import math
-
-TNode = TypeVar("TNode", bound="Node")
+import graphviz
+from typing import Callable
 
 
-class Node(Generic[TNode]):
-    def __init__(self, parent: Optional[TNode] = None, move: Optional[Move] = None, player: int = 1):
-        self.parent = parent
-        self.move = move
-        self.children = []
-        self.player = player
-
-        self.N = 0
-        self.Q = 0
-
-    def value(self, c=1.0):
-        if self.N == 0:
-            return np.inf
-        return (self.Q / self.N) + c * np.sqrt(np.log(self.parent.N) / (self.N + 1))
-
-    def visit(self):
-        self.N += 1
-
-    def update_value(self, winner: int):
-        self.Q += -1 if winner == self.player else 1
-
-    def distribution(self):
-        return dict([(child.move, child.N / self.N) for child in self.children])
+RolloutPolicy = Callable[[StateManager], Agent]
 
 
-class MCTSAgent:
-    def __init__(self, environment: StateManager, actor: Actor):
+class MCTS:
+    def __init__(self, environment: StateManager, rollout_policy_agent: RolloutPolicy, time_budget=2.0, c=1.0):
         self.environment = environment.copy()
         self._reset_environment = environment.copy()
-        self.actor = actor
         self.root = Node(player=self.environment.current_player)
+
+        self._agent = rollout_policy_agent(self.environment)
+        self.time_budget = time_budget
+        self.c = c
 
     """ POLICIES """
     @staticmethod
@@ -57,31 +36,27 @@ class MCTSAgent:
         if random.random() <= epsilon:
             return random.choice(environment.legal_moves)
         else:
-            return self.actor.best_move(environment)
+            return self._agent.get_move(greedy=True)
 
     """ PROCESSES """
 
-    def search(self, time_budget=2.0, epsilon=1.0, c=1.0):
+    def search(self):
         start_time = time.time()
         num_rollouts = 0
 
-        while time.time() - start_time < time_budget:
+        while time.time() - start_time < self.time_budget:
             # Select a node to expend
-            node, environment = self.selection(c=c)
+            node, environment = self.selection(c=self.c)
 
             # Do expansion if possible
             node, environment = self.expand(node, environment)
 
             # Rollout a game
-            winner = self.rollout(environment, epsilon=epsilon)
+            winner = self.rollout(environment)
 
             # Backup the results
             self.backup(node, winner)
             num_rollouts += 1
-
-        print(num_rollouts)
-
-        return self.distribution, self.best_move
 
     def selection(self, c=1.0):
         """
@@ -116,14 +91,14 @@ class MCTSAgent:
 
         return random_child, environment
 
-    def rollout(self, environment: StateManager, epsilon=1.0):
+    def rollout(self, environment: StateManager):
         """
         Simulate a game based on the rollout policy and return the winning player
         """
         environment = environment.copy()
 
         while not environment.is_game_over:
-            action = self._rollout_policy(environment, epsilon=epsilon)
+            action = self._rollout_policy(environment, epsilon=self.epsilon)
             environment.execute(action)
 
         return environment.current_player
@@ -152,16 +127,6 @@ class MCTSAgent:
         # Normalize the distribution
         dist /= sum(dist)
         return dist
-
-    @property
-    def best_move(self, greedy=False):
-        distribution = self.distribution
-        if greedy:
-            value = np.max(distribution)
-        else:
-            value = np.random.choice(distribution, p=distribution)
-        return self.environment.transform_binary_move_index_to_move(
-                random.choice(np.argwhere(distribution == value).flatten()))
 
     def move(self, move: Move):
         for child in self.root.children:

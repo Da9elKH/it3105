@@ -1,7 +1,10 @@
 from agent import Agent
 from random import choice
+import numpy as np
 
 
 class RandomAgent(Agent):
-    def action(self, state, valid_actions, game):
-        return choice(valid_actions)
+
+    @property
+    def distribution(self):
+        return np.array(self.environment.legal_binary_moves)/sum(self.environment.legal_binary_moves)

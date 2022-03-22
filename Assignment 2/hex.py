@@ -65,11 +65,9 @@ class HexGame(StateManager):
     def legal_binary_moves(self):
         return np.logical_not(self.state).astype(np.int32).flatten().tolist()
 
-    #@lru_cache
     def transform_move_to_binary_move_index(self, move: tuple[int, int]) -> int:
         return move[0] * self.size + move[1]
 
-    #@lru_cache
     def transform_binary_move_index_to_move(self, binary_move_index: int) -> tuple[int, int]:
         return np.unravel_index(binary_move_index, shape=self.state.shape)
 

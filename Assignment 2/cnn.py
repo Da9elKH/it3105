@@ -25,7 +25,7 @@ def softmax_cross_entropy_with_logits(y_true, y_pred):
     return loss
 
 
-class Network:
+class CNN:
     def __init__(self, model: Model):
         self.model = model
 
@@ -33,12 +33,12 @@ class Network:
         return self.model(x)
 
     def train_on_batch(self, x, y):
-        return self.model.train_on_batch(np.array(x), np.array(y))
+        return self.model.train_on_batch(x, y)
 
     @classmethod
     def from_file(cls, filename):
         """ Returns a network instance from file """
-        model = load_model(MODELS_FOLDER + filename)
+        model = load_model(MODELS_FOLDER + filename, custom_objects={"softmax_cross_entropy_with_logits": softmax_cross_entropy_with_logits})
         return cls(model=model)
 
     @classmethod
@@ -46,21 +46,21 @@ class Network:
         """ Initialize the NN with the given depth and width for the problem environment """
 
         def conv(x):
-            x = Conv2D(filters=64, kernel_size=(3, 3), activation="linear", padding='same')(x)
+            x = Conv2D(filters=64, kernel_size=(3, 3), activation="linear", padding='same', data_format="channels_last")(x)
             x = BatchNormalization(axis=1)(x)
             x = swish(x)
             return x
 
-        def residual(data):
-            x = conv(data)
-            x = Conv2D(filters=64, kernel_size=(3, 3), activation='linear', padding='same')(x)
+        def residual(input_data):
+            x = conv(input_data)
+            x = Conv2D(filters=64, kernel_size=(3, 3), activation='linear', padding='same', data_format="channels_last")(x)
             x = BatchNormalization(axis=1)(x)
-            x = add[[data, x]]
+            x = add([input_data, x])
             x = swish(x)
             return x
 
         def policy(x):
-            x = Conv2D(filters=2, kernel_size=(1,1), activation='linear', padding='same')(x)
+            x = Conv2D(filters=2, kernel_size=(1, 1), activation='linear', padding='same', data_format="channels_last")(x)
             x = BatchNormalization(axis=1)(x)
             x = swish(x)
             x = Flatten()(x)
@@ -68,28 +68,31 @@ class Network:
             return x
 
         def value(x):
-            x = Conv2D(filters=1, kernel_size=(1,1), activation='linear', padding='same')(x)
+            x = Conv2D(filters=1, kernel_size=(1,1), activation='linear', padding='same', data_format="channels_last")(x)
             x = BatchNormalization(axis=1)(x)
             x = swish(x)
-            x = Flatten(x)
-            x = Dense(20, activation='linear', )(x)
+            x = Flatten()(x)
+            x = Dense(20, activation='linear')(x)
             x = swish(x)
             x = Dense(1, activation='tanh', name="value")(x)
             return x
 
-        data = Input(shape=input_size, name='input')
-        x = conv(data)
+        # Model build
+        main_input = Input(shape=input_size, name='input')
+        x = conv(main_input)
 
-        for i in range(5):
+        # Hidden layers
+        for i in range(10):
             x = residual(x)
 
+        # Value and policy head
         pol = policy(x)
         val = value(x)
 
-        model = Model(inputs=[data], outputs=[pol, val])
+        model = Model(inputs=[main_input], outputs=[pol, val])
         model.compile(
             loss={'value': 'mean_squared_error', 'policy': softmax_cross_entropy_with_logits},
-            optimizer=SGD(lr=0.01, momentum=0.9),
+            optimizer=Adam(learning_rate=learning_rate),
             loss_weights={'value': 0.5, 'policy': 0.5}
         )
 

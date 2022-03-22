@@ -26,10 +26,10 @@ class HexGame(StateManager, Generic[THexGame]):
         self.size = size
         self.start_player = start_player
         self.players = (1, 2)
-        self.current_player, self.state, self._shadow_state, self._union_find, self._is_game_over = self.init_values()
+        self.current_player, self.state, self.shadow_state, self._union_find, self._game_over = self.init_values()
 
     def reset(self):
-        self.current_player, self.state, self._shadow_state, self._union_find, self._is_game_over = self.init_values()
+        self.current_player, self.state, self.shadow_state, self._union_find, self._game_over = self.init_values()
 
     def init_values(self):
         state = np.zeros((self.size, self.size), dtype=np.int32)
@@ -60,7 +60,10 @@ class HexGame(StateManager, Generic[THexGame]):
 
     @property
     def is_game_over(self) -> bool:
-        return self.union_find.connected("start", "end")
+        return self._game_over
+
+    def update_game_status(self):
+        self._game_over = self.union_find.connected("start", "end")
 
     """ MOVES """
     @property
@@ -93,6 +96,18 @@ class HexGame(StateManager, Generic[THexGame]):
         return np.array([float(s) for s in list(''.join([bits(s) for s in state]))], dtype=np.int32)
 
     @property
+    def cnn_state(self):
+        player_state = (self.state == self.current_player).astype(np.int32)
+        opponent_state = (self.state == self.next_player).astype(np.int32)
+
+        # Transposing the state for player two to be seen as win from top to bottom
+        if self.current_player == self.players[1]:
+            player_state = player_state.T
+            opponent_state = opponent_state.T
+
+        return np.moveaxis(np.array([player_state, opponent_state]), 0, 2)
+
+    @property
     def state_test(self):
         return [self.current_player, *self.state.flatten()]
 
@@ -110,8 +125,11 @@ class HexGame(StateManager, Generic[THexGame]):
         if move in self.legal_moves:
             shadow_move = (move[0] + 1, move[1] + 1)
             self.state[move] = self.current_player
-            self._shadow_state[shadow_move] = self.current_player
+            self.shadow_state[shadow_move] = self.current_player
             self._union_neighbors(shadow_move)
+
+            # Cache game over
+            self.update_game_status()
 
             if not self.is_game_over:
                 self.switch_player()
@@ -123,7 +141,7 @@ class HexGame(StateManager, Generic[THexGame]):
         for neighbor in neighbors:
             if neighbor[0] < 0 or neighbor[1] < 0:
                 continue
-            if self._shadow_state[neighbor] == self._shadow_state[move]:
+            if self.shadow_state[neighbor] == self.shadow_state[move]:
                 self.union_find.union(neighbor, move)
 
 

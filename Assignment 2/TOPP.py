@@ -1,7 +1,9 @@
 from agents.agent import Agent
 from agents.ann_agent import ANNAgent
+from agents.cnn_agent import CNNAgent
 from agents.buffer_agent import BufferAgent
-from ann import Network
+from ann import ANN
+from cnn import CNN
 from hex import HexGame, GameWindow
 from tqdm import tqdm, trange
 from itertools import permutations
@@ -55,8 +57,9 @@ if __name__ == "__main__":
     env = HexGame(size=4)
     topp = TOPP(environment=env)
 
-    files = ["(1) S4_B0.h5", "(1) S4_B225.h5"]
+    files = ["(2) S4_B20.h5", "(7) S4_B0.h5"]
     for filename in files:
-        agents[filename] = ANNAgent(environment=env, network=Network.from_file(filename))
+        #agents[filename] = ANNAgent(environment=env, network=Network.from_file(filename))
+        agents[filename] = CNNAgent(environment=env, network=CNN.from_file(filename))
 
-    print(topp.tournament(agents, 50))
+    print(topp.tournament(agents, 100))

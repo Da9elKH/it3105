@@ -12,13 +12,14 @@ from typing import Callable
 
 
 class MCTS:
-    def __init__(self, environment: StateManager, rollout_policy_agent: Agent, time_budget=2.0, c=1.0, epsilon=1.0):
+    def __init__(self, environment: StateManager, rollout_policy_agent: Agent, time_budget=0.0, rollouts=0, c=1.0, epsilon=1.0):
         self.environment = environment.copy()
         self._reset_environment = environment.copy()
         self.root = Node(player=self.environment.current_player)
 
         self._agent = rollout_policy_agent
         self.time_budget = time_budget
+        self.rollouts = rollouts
         self.c = c
         self.epsilon = epsilon
 
@@ -44,7 +45,7 @@ class MCTS:
         start_time = time.time()
         num_rollouts = 0
 
-        while time.time() - start_time < self.time_budget:
+        while time.time() - start_time < self.time_budget or num_rollouts < self.rollouts:
             # Select a node to expend
             node, environment = self.selection(c=self.c)
 
@@ -57,6 +58,8 @@ class MCTS:
             # Backup the results
             self.backup(node, winner)
             num_rollouts += 1
+
+        print(f"MCTS: Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
 
     def selection(self, c=1.0):
         """
@@ -125,7 +128,6 @@ class MCTS:
             dist[index] = v
 
         # Normalize the distribution
-        print(dist)
         dist /= sum(dist)
 
         return dist
@@ -136,11 +138,8 @@ class MCTS:
                 self.root = child
                 self.root.parent = None
                 self.environment.execute(move)
-
-                print(f"Moved to {move}")
                 return
 
-        print(f"Failed to move to {move}")
         self.root = Node(parent=None, move=move, player=self.environment.next_player)
         self.environment.execute(move)
         return

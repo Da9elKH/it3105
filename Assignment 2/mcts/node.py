@@ -17,7 +17,8 @@ class Node(Generic[TNode]):
 
     def value(self, c=1.0):
         if self.N == 0:
-            return np.inf
+            # TODO: 0 or inf?
+            return 0
         return (self.Q / self.N) + c * np.sqrt(np.log(self.parent.N) / (self.N + 1))
 
     def visit(self):

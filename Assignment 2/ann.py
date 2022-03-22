@@ -5,6 +5,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import load_model
 from tensorflow.keras.models import Model
 from os import path
+import numpy as np
 
 MODELS_FOLDER = "models/"
 
@@ -17,7 +18,7 @@ class Network:
         return self.model(x)
 
     def train_on_batch(self, x, y):
-        return self.model.train_on_batch(x, y)
+        return self.model.train_on_batch(np.array(x), np.array(y))
 
     @classmethod
     def from_file(cls, filename):

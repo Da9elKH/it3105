@@ -5,7 +5,7 @@ import random
 
 
 class Agent(ABC):
-    def __init__(self, environment: StateManager):
+    def __init__(self, environment: StateManager = None):
         self.environment = environment
 
     def get_move(self, greedy=False):
@@ -17,7 +17,7 @@ class Agent(ABC):
             value = np.random.choice(distribution, p=distribution)
 
         return self.environment.transform_binary_move_index_to_move(
-            random.choice(np.argwhere(distribution == value).flatten()))
+            random.choice(np.argwhere(distribution == value).flatten())), distribution
 
     @property
     @abstractmethod

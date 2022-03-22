@@ -1,5 +1,4 @@
-from agent import Agent
-from random import choice
+from .agent import Agent
 import numpy as np
 
 

@@ -1,10 +1,11 @@
 from .agent import Agent
+from misc.state_manager import StateManager
+from ann import Network
 import numpy as np
-import random
 
 
 class ANNAgent(Agent):
-    def __init__(self, environment, network):
+    def __init__(self, environment: StateManager = None, network: Network = None):
         super(ANNAgent, self).__init__(environment)
         self.network = network
 

@@ -10,18 +10,22 @@ from agents.agent import Agent
 from unionfind import UnionFind
 from misc.state_manager import StateManager
 from copy import deepcopy
+from typing import TypeVar, Generic
 
 RED_COLOR = "fc766a"
 RED_COLOR_LIGHT = "fed1cd"
 BLUE_COLOR = "5b84b1"
 BLUE_COLOR_LIGHT = "bacbde"
 
+THexGame = TypeVar("THexGame", bound="HexGame")
 
-class HexGame(StateManager):
-    def __init__(self, size=5, players=(1, 2)):
+
+class HexGame(StateManager, Generic[THexGame]):
+    def __init__(self, size=5, start_player=1):
         super().__init__()
         self.size = size
-        self.players = players
+        self.start_player = start_player
+        self.players = (1, 2)
         self.current_player, self.state, self._shadow_state, self._union_find, self._is_game_over = self.init_values()
 
     def reset(self):
@@ -44,7 +48,11 @@ class HexGame(StateManager):
             union_find[self.players[1]].union("start", (0, i))
             union_find[self.players[1]].union("end", (self.size + 1, i))
 
-        return self.players[0], state, shadow_state, union_find, False
+        return self.start_player, state, shadow_state, union_find, False
+
+    def sync_state(self, state):
+        if state.shape == self.state.shape:
+            self.state += (self.state - self.state)
 
     @property
     def union_find(self) -> UnionFind:
@@ -84,7 +92,11 @@ class HexGame(StateManager):
         state = [self.current_player, *self.state.flatten()]
         return np.array([float(s) for s in list(''.join([bits(s) for s in state]))], dtype=np.int32)
 
-    def copy(self) -> StateManager:
+    @property
+    def state_test(self):
+        return [self.current_player, *self.state.flatten()]
+
+    def copy(self) -> THexGame:
         return deepcopy(self)
 
     @property
@@ -169,7 +181,11 @@ class GameWindow(arcade.Window):
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
         if not self.agent:
             indices = self.renderer.indices_from_position(x, y)
+
+            print("Move", indices)
+            print("Before state",  self.game.state)
             self.game.execute(indices)
+            print("After state", self.game.state)
             self.draw_board()
 
     def on_update(self, delta_time):
@@ -200,6 +216,7 @@ class GameWindow(arcade.Window):
                 for location, value in meta.items():
                     self.state_meta[location] = value
             if action is not None:
+                print(self.game.state)
                 self.game.execute(action)
             self.draw_board()
 

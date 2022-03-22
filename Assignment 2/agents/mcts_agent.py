@@ -1,4 +1,4 @@
-from agent import Agent
+from .agent import Agent
 from misc.state_manager import StateManager
 from mcts.mcts import MCTS
 

@@ -1,6 +1,6 @@
 from misc.state_manager import StateManager
 from actor import Actor
-from node import Node
+from .node import Node
 from misc.types import Move
 from misc.state_manager import StateManager
 from agents.agent import Agent
@@ -11,18 +11,16 @@ import graphviz
 from typing import Callable
 
 
-RolloutPolicy = Callable[[StateManager], Agent]
-
-
 class MCTS:
-    def __init__(self, environment: StateManager, rollout_policy_agent: RolloutPolicy, time_budget=2.0, c=1.0):
+    def __init__(self, environment: StateManager, rollout_policy_agent: Agent, time_budget=2.0, c=1.0, epsilon=1.0):
         self.environment = environment.copy()
         self._reset_environment = environment.copy()
         self.root = Node(player=self.environment.current_player)
 
-        self._agent = rollout_policy_agent(self.environment)
+        self._agent = rollout_policy_agent
         self.time_budget = time_budget
         self.c = c
+        self.epsilon = epsilon
 
     """ POLICIES """
     @staticmethod
@@ -36,7 +34,9 @@ class MCTS:
         if random.random() <= epsilon:
             return random.choice(environment.legal_moves)
         else:
-            return self._agent.get_move(greedy=True)
+            self._agent.environment = environment
+            move, _ = self._agent.get_move(greedy=True)
+            return move
 
     """ PROCESSES """
 
@@ -125,18 +125,28 @@ class MCTS:
             dist[index] = v
 
         # Normalize the distribution
+        print(dist)
         dist /= sum(dist)
+
         return dist
 
     def move(self, move: Move):
         for child in self.root.children:
             if child.move == move:
                 self.root = child
-                self.environment.execute(move)
                 self.root.parent = None
+                self.environment.execute(move)
 
-    def reset(self):
-        self.environment = self._reset_environment.copy()
+                print(f"Moved to {move}")
+                return
+
+        print(f"Failed to move to {move}")
+        self.root = Node(parent=None, move=move, player=self.environment.next_player)
+        self.environment.execute(move)
+        return
+
+    def reset(self, environment: StateManager = None):
+        self.environment = environment.copy() if environment else self._reset_environment.copy()
         self.root = Node(player=self.environment.current_player)
         # TODO: Fix agent here?
 

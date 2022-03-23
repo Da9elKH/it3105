@@ -1,5 +1,5 @@
 from agents.mcts_agent import MCTSAgent
-from hex import HexGame, GameWindow
+from hex import HexGame, GameWindow, NewHexGame
 from actor import Actor
 from agents.buffer_agent import BufferAgent
 from agents.ann_agent import ANNAgent
@@ -45,7 +45,7 @@ if __name__ == "__main__" and False:
 
 if __name__ == "__main__":
 
-    env = HexGame(size=4)
+    env = NewHexGame(size=7)
     network = CNN.build(
         input_size=env.cnn_state.shape,
         output_size=len(env.legal_binary_moves),
@@ -56,8 +56,8 @@ if __name__ == "__main__":
         rollout_policy_agent=CNNAgent(network=network),
         environment=env,
         time_budget=1.0,
-        #rollouts=600,
-        epsilon=1.00,
+        rollouts=600,
+        epsilon=1.0,
         c=2.0  # 1 til 3
     )
     agent = MCTSAgent(
@@ -80,18 +80,7 @@ if __name__ == "__main__":
 
             while not env.is_game_over:
                 # Run MCTS
-                import cProfile
-
-                pr = cProfile.Profile()
-                pr.enable()
-
                 best_move, distribution = agent.get_move(greedy=True)
-
-                pr.disable()
-                pr.print_stats(sort="tottime")
-                break
-
-
 
                 # Format distribution to be viewed in game board
                 meta_dist = {index: str(round(v * 100, 2)) + "%" for index, v in np.ndenumerate(distribution.reshape(env.state.shape))}
@@ -104,9 +93,10 @@ if __name__ == "__main__":
                 memory.register_state_and_distribution(env.cnn_state, distribution)
 
                 # Change environment
-                env.execute(best_move)
+                env.play(best_move)
                 mcts.move(best_move)
 
+            window.run()
             memory.register_result(env.result)
 
             # Train actor on game played

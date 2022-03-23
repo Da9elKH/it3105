@@ -72,7 +72,7 @@ class MCTS:
         while len(children) != 0:
             node = self._tree_policy(children, c=c)
             children = node.children
-            environment.execute(node.move)
+            environment.play(node.move)
 
         return node, environment
 
@@ -90,7 +90,7 @@ class MCTS:
             node.children.append(Node(node, move, player=environment.next_player))
 
         random_child = random.choice(node.children)
-        environment.execute(random_child.move)
+        environment.play(random_child.move)
 
         return random_child, environment
 
@@ -102,7 +102,7 @@ class MCTS:
 
         while not environment.is_game_over:
             action = self._rollout_policy(environment, epsilon=self.epsilon)
-            environment.execute(action)
+            environment.play(action)
 
         return environment.current_player
 
@@ -137,11 +137,11 @@ class MCTS:
             if child.move == move:
                 self.root = child
                 self.root.parent = None
-                self.environment.execute(move)
+                self.environment.play(move)
                 return
 
         self.root = Node(parent=None, move=move, player=self.environment.next_player)
-        self.environment.execute(move)
+        self.environment.play(move)
         return
 
     def reset(self, environment: StateManager = None):

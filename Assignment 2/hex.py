@@ -1,3 +1,4 @@
+from collections import deque
 from functools import lru_cache
 from typing import Union
 
@@ -11,13 +12,182 @@ from unionfind import UnionFind
 from misc.state_manager import StateManager
 from copy import deepcopy
 from typing import TypeVar, Generic
+import config
+from itertools import product
 
 RED_COLOR = "fc766a"
 RED_COLOR_LIGHT = "fed1cd"
 BLUE_COLOR = "5b84b1"
 BLUE_COLOR_LIGHT = "bacbde"
+PLAYERS = (1, -1)
 
 THexGame = TypeVar("THexGame", bound="HexGame")
+
+
+class NewHexGame:
+    def __init__(self, size=5, start_player=PLAYERS[0], state=np.zeros((1,), dtype=np.int8)):
+        self.size = size
+        self._start_player = start_player
+        self._uf = self._uf_init()
+
+        # These will be updated in state.setter
+        self.current_player = None
+        self._is_game_over = None
+
+        self._shadow_state = self._state_init()
+        self.state = state
+
+    # ####################
+    #    State handling
+    # ####################
+    @property
+    def state(self):
+        return self._shadow_state[1:-1, 1:-1]
+
+    @state.setter
+    def state(self, value):
+        self._shadow_state[1:-1, 1:-1] = value
+        self._on_state_updated()
+
+    @property
+    def flat_state(self):
+        return [self.current_player, *self.state.flatten()]
+
+    @property
+    def cnn_state(self):
+        player_state = (self.state == self.current_player).astype(np.int32)
+        opponent_state = (self.state == self.next_player).astype(np.int32)
+
+        # Transposing the state for player two to be seen as win from top to bottom
+        if self.current_player == PLAYERS[1]:
+            player_state = player_state.T
+            opponent_state = opponent_state.T
+
+        return np.moveaxis(np.array([player_state, opponent_state]), 0, 2)
+
+    def _on_state_updated(self):
+        self._uf_state_sync()
+
+        # Check if the last move ended the game
+        last_player = self._current_player * (-1)
+        self._is_game_over = self._uf[last_player].connected("start", "end")
+
+        # If not then update the player
+        if self.is_game_over:
+            self.current_player = last_player
+        else:
+            self.current_player = last_player * (-1)
+
+    def _state_init(self):
+        shadow_state = np.zeros((self.size + 2, self.size + 2), dtype=np.int8)
+        shadow_state[:, 0] = shadow_state[:, -1] = PLAYERS[1]
+        shadow_state[0, :] = shadow_state[-1, :] = PLAYERS[0]
+        return shadow_state
+
+    # ####################
+    #    Game Playing
+    # ####################
+    def play(self, move):
+        if move in self.legal_moves:
+            # Register the move
+            self.state[move] = self.current_player
+
+            # Sync uf neighbors
+            self._uf_merge_neighbors(move, self.current_player)
+
+            # Update game status
+            self._is_game_over = self.uf.connected("start", "end")
+
+            if not self.is_game_over:
+                # Switch player
+                self.current_player = self.next_player
+
+    @property
+    def legal_moves(self):
+        if self.is_game_over:
+            return []
+        return [tuple(x) for x in np.argwhere(self.state == 0).tolist()]
+
+    @property
+    def legal_binary_moves(self):
+        return np.logical_not(self.state).astype(np.int8).flatten().tolist()
+
+    def transform_move_to_binary_move_index(self, move: tuple[int, int]) -> int:
+        return move[0] * self.size + move[1]
+
+    def transform_binary_move_index_to_move(self, binary_move_index: int) -> tuple[int, int]:
+        return np.unravel_index(binary_move_index, shape=self.state.shape)
+
+    @property
+    def next_player(self):
+        return self.current_player * (-1)
+
+    @property
+    def _current_player(self):
+        return self._start_player * (-1) ** (np.sum(self.state != 0))
+
+    # ####################
+    #   Game over check
+    # ####################
+    @property
+    def is_game_over(self):
+        return self._is_game_over
+
+    @property
+    def result(self):
+        return self.current_player
+
+    @property
+    def uf(self):
+        return self._uf[self.current_player]
+
+    def _uf_state_sync(self):
+        # Sync with current state
+        for player in PLAYERS:
+            for location in np.argwhere(self.state == player).tolist():
+                self._uf_merge_neighbors(location, player)
+
+    @classmethod
+    @lru_cache(typed=True)
+    def _uf_neighbors(cls, location, size):
+        neighbors = lambda r, c: [(r + 1, c - 1), (r, c - 1), (r - 1, c), (r - 1, c + 1), (r, c + 1), (r + 1, c)]
+        inside = lambda x: 0 <= x <= size + 1
+        return [(i, j) for i, j in neighbors(*location) if inside(i) and inside(j)]
+
+    def _uf_merge_neighbors(self, location, player):
+        # Merge all neighbors
+        location = (location[0] + 1, location[1] + 1)
+        neighbors = self._uf_neighbors(location, self.size)
+
+        for neighbor in neighbors:
+            if self._shadow_state[location] == self._shadow_state[neighbor]:
+                self._uf[player].union(location, neighbor)
+
+    def _uf_init(self):
+        # Initiate union-find for both players
+        uf = {
+            PLAYERS[0]: UnionFind(["start", "end"]),
+            PLAYERS[1]: UnionFind(["start", "end"])
+        }
+
+        # Connect player edges
+        for i in range(self.size + 2):
+            uf[PLAYERS[0]].union("start", (0, i))
+            uf[PLAYERS[0]].union("end", (self.size + 1, i))
+            uf[PLAYERS[1]].union("start", (i, self.size + 1))
+            uf[PLAYERS[1]].union("end", (i, 0))
+
+        return uf
+
+    # ####################
+    #        Misc
+    # ####################
+    def copy(self):
+        new = self.__class__(start_player=self._start_player, size=self.size, state=self.state.copy())
+        return new
+
+    def reset(self):
+        self.state = np.zeros(self.state.shape, dtype=np.int8)
 
 
 class HexGame(StateManager, Generic[THexGame]):
@@ -120,6 +290,9 @@ class HexGame(StateManager, Generic[THexGame]):
 
     def switch_player(self):
         self.current_player = self.next_player
+
+    def play(self, move: tuple[int, int]):
+        self.execute(move)
 
     def execute(self, move: tuple[int, int]):
         if move in self.legal_moves:
@@ -235,7 +408,7 @@ class GameWindow(arcade.Window):
                     self.state_meta[location] = value
             if action is not None:
                 print(self.game.state)
-                self.game.execute(action)
+                self.game.play(action)
             self.draw_board()
 
     def draw_board(self):
@@ -339,8 +512,8 @@ class Piece:
         return {
             (1, True): RED_COLOR,
             (1, False): RED_COLOR_LIGHT,
-            (2, True): BLUE_COLOR,
-            (2, False): BLUE_COLOR_LIGHT,
+            (-1, True): BLUE_COLOR,
+            (-1, False): BLUE_COLOR_LIGHT,
         }[self.player, self.active]
 
     def draw(self):

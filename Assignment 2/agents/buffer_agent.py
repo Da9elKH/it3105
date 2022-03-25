@@ -1,15 +1,18 @@
 from .agent import Agent
+from misc.state_manager import StateManager
 
 # TODO: FIX THIS
 
+
 class BufferAgent(Agent):
-    def __init__(self):
+    def __init__(self, environment: StateManager = None):
+        super().__init__(environment)
         self.action_buffer = []
         self.distribution_buffer = []
         self.reversed = False
         self.first_pop = True
 
-    def action(self, state, valid_actions, game):
+    def get_move(self, greedy=True):
         if not self.reversed:
             self.action_buffer.reverse()
             self.distribution_buffer.reverse()

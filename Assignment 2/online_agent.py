@@ -1,10 +1,10 @@
 from ActorClient import ActorClient
-from agents.agent import Agent
 from agents.buffer_agent import BufferAgent
 from agents.random_agent import RandomAgent
 from mcts.mcts import MCTS
 from agents.mcts_agent import MCTSAgent
-from hex import GameWindow, HexGame
+from environments.hex import HexGame
+from environments.hex_gui import HexGUI
 import numpy as np
 
 
@@ -12,55 +12,47 @@ class OnlineAgent(ActorClient):
     def __init__(self, auth, qualify):
         super().__init__(auth=auth, qualify=qualify)
 
+        self.buffer = None
         self.environment = HexGame(size=7)
         self.agent = MCTSAgent(
             environment=self.environment,
-            model=MCTS(
-                environment=self.environment,
-                time_budget=1.0,
-                epsilon=1.0,
-                c=1.0,
-                rollout_policy_agent=RandomAgent(environment=self.environment)
-        ))
-
-        self.buffer = None
+            mcts_params={
+                "time_budget": 0.95,
+                "epsilon": 1.0,
+                "c": 1.0,
+                "rollout_policy_agent": RandomAgent(),
+                "verbose": True
+            }
+        )
 
     def handle_game_start(self, start_player):
-        self.environment.start_player = start_player
-        self.environment.reset()
-        self.agent.model.reset(self.environment)
+        player = {1: 1, 2: -1}
+        self.environment.reset(start_player=player[start_player])
+        self.agent.model.reset()
         self.buffer = BufferAgent()
 
     def handle_get_action(self, state):
-        # Opponent move
+        # CHECK IF OPPONENT HAS DONE A MOVE
         previous_state = self.environment.state
         state = np.array(state[1:]).reshape(self.environment.state.shape)
+        state[state == 2] = -1
+        opponent_moves = np.argwhere((state - previous_state) != 0).tolist()
 
+        if len(opponent_moves) == 1:
+            self.agent.play(opponent_moves[0])
+            self.buffer.add_move(opponent_moves[0])
 
-        print(state)
-
-        print(np.argwhere((state - previous_state) != 0))
-
-        opponent_move = tuple(np.argwhere((state - previous_state) != 0).tolist()[0])
-        self.environment.execute(opponent_move)
-        self.agent.model.move(opponent_move)
-
-        # Current player move
+        # DO A MOVE ON CURRENT STATE
         move, _ = self.agent.get_move(greedy=True)
-        self.environment.execute(move)
-        self.agent.model.move(move)
-
-        self.buffer.add_move(opponent_move)
+        self.agent.play(move)
         self.buffer.add_move(move)
 
         return int(move[0]), int(move[1])
 
-    #def handle_game_over(self, winner, end_state):
-    #    #window = GameWindow(width=1000, height=600, game=HexGame(size=7), agent=self.buffer, view_update_rate=2.0)
-    #    #window.run()
-    #    super().handle_game_over(winner, end_state)
+    def handle_game_over(self, winner, end_state):
+        super().handle_game_over(winner, end_state)
 
 
 if __name__ == "__main__":
     oa = OnlineAgent(auth="e1431af64ca24ffa9f2f3887e6b41a32", qualify=False)
-    oa.run()
+    oa.run(mode="league")

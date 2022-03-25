@@ -9,9 +9,6 @@ class StateManager(ABC, Generic[TStateManager]):
     def __init__(self):
         self.current_player = 1
 
-    def reset(self) -> None:
-        pass
-
     @property
     @abstractmethod
     def is_game_over(self) -> bool:
@@ -53,7 +50,7 @@ class StateManager(ABC, Generic[TStateManager]):
         pass
 
     @abstractmethod
-    def execute(self, move: Move) -> None:
+    def play(self, move: Move) -> None:
         """ Executes the move for the current player on the board """
         pass
 
@@ -66,4 +63,7 @@ class StateManager(ABC, Generic[TStateManager]):
     @abstractmethod
     def copy(self) -> TStateManager:
         """ Deep copy of the state manager """
+        pass
+
+    def reset(self) -> None:
         pass

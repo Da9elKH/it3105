@@ -12,8 +12,9 @@ from typing import Callable
 
 
 class MCTS:
-    def __init__(self, environment: StateManager, rollout_policy_agent: Agent, time_budget=0.0, rollouts=0, c=1.0, epsilon=1.0):
-        self.environment = environment.copy()
+    def __init__(self, environment: StateManager, rollout_policy_agent: Agent, time_budget=0.0, rollouts=0, c=1.0,
+                 epsilon=1.0, verbose=False):
+        self.environment = environment
         self._reset_environment = environment.copy()
         self.root = Node(player=self.environment.current_player)
 
@@ -22,8 +23,10 @@ class MCTS:
         self.rollouts = rollouts
         self.c = c
         self.epsilon = epsilon
+        self.verbose = verbose
 
     """ POLICIES """
+
     @staticmethod
     def _tree_policy(nodes: list[Node], c=1.0):
         move_values = [node.value(c=c) for node in nodes]
@@ -59,7 +62,8 @@ class MCTS:
             self.backup(node, winner)
             num_rollouts += 1
 
-        print(f"MCTS: Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
+        if self.verbose:
+            print(f"MCTS: Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
 
     def selection(self, c=1.0):
         """
@@ -89,16 +93,16 @@ class MCTS:
         for move in environment.legal_moves:
             node.children.append(Node(node, move, player=environment.next_player))
 
-        random_child = random.choice(node.children)
-        environment.play(random_child.move)
+        random_node = random.choice(node.children)
+        environment.play(random_node.move)
 
-        return random_child, environment
+        return random_node, environment
 
     def rollout(self, environment: StateManager):
         """
         Simulate a game based on the rollout policy and return the winning player
         """
-        environment = environment.copy()
+        # environment = environment.copy()
 
         while not environment.is_game_over:
             action = self._rollout_policy(environment, epsilon=self.epsilon)
@@ -118,6 +122,7 @@ class MCTS:
             node = node.parent
 
     """ MISC """
+
     @property
     def distribution(self):
         node_action_distribution = self.root.distribution()
@@ -132,22 +137,24 @@ class MCTS:
 
         return dist
 
-    def move(self, move: Move):
-        for child in self.root.children:
-            if child.move == move:
-                self.root = child
-                self.root.parent = None
-                self.environment.play(move)
-                return
+    def move(self, move: Move, update_environment=True):
 
-        self.root = Node(parent=None, move=move, player=self.environment.next_player)
-        self.environment.play(move)
-        return
+        # Find or set new root node based on move
+        self.root = next(
+            (child for child in self.root.children if child.move == move),
+            Node(move=move, player=self.environment.next_player)
+        )
+
+        # Update the parent to be none.
+        self.root.parent = None
+
+        # If environment should be updated
+        if update_environment:
+            self.environment.play(self.root.move)
 
     def reset(self, environment: StateManager = None):
-        self.environment = environment.copy() if environment else self._reset_environment.copy()
+        # self.environment = environment.copy() if environment is not None else self._reset_environment.copy()
         self.root = Node(player=self.environment.current_player)
-        # TODO: Fix agent here?
 
     def draw(self):
         g = graphviz.Digraph('G', filename='MCTS.gv')

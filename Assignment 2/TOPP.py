@@ -1,11 +1,8 @@
 from agents.agent import Agent
-from agents.ann_agent import ANNAgent
 from agents.cnn_agent import CNNAgent
-from agents.buffer_agent import BufferAgent
-from ann import ANN
 from cnn import CNN
-from hex import HexGame, GameWindow
-from tqdm import tqdm, trange
+from environments.hex import HexGame
+from tqdm import tqdm
 from itertools import permutations
 import numpy as np
 

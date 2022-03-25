@@ -1,14 +1,12 @@
 from agents.mcts_agent import MCTSAgent
-from hex import HexGame, GameWindow, NewHexGame
-from actor import Actor
+from environments.hex import HexGame
+from environments.hex_gui import HexGUI
 from agents.buffer_agent import BufferAgent
-from agents.ann_agent import ANNAgent
 from agents.cnn_agent import CNNAgent
 import time
 import numpy as np
 from collections import deque
-from tqdm import tqdm, trange
-from ann import ANN
+from tqdm import trange
 from cnn import CNN
 from mcts.mcts import MCTS
 from memory import Memory
@@ -45,7 +43,7 @@ if __name__ == "__main__" and False:
 
 if __name__ == "__main__":
 
-    env = NewHexGame(size=7)
+    env = HexGame(size=7, start_player=-1)
     network = CNN.build(
         input_size=env.cnn_state.shape,
         output_size=len(env.legal_binary_moves),
@@ -56,9 +54,10 @@ if __name__ == "__main__":
         rollout_policy_agent=CNNAgent(network=network),
         environment=env,
         time_budget=1.0,
-        rollouts=600,
-        epsilon=1.0,
-        c=2.0  # 1 til 3
+        #rollouts=2500,
+        epsilon=1.00,
+        verbose=True,
+        c=1.0  # 1 til 3
     )
     agent = MCTSAgent(
         environment=env,
@@ -66,8 +65,8 @@ if __name__ == "__main__":
     )
 
     """ RENDERING """
-    buffer = BufferAgent()
-    window = GameWindow(width=1000, height=600, game=env.copy(), agent=buffer, view_update_rate=2.0)
+    buffer = BufferAgent(environment=env)
+    window = HexGUI(width=1000, height=600, game=env.copy(), agent=buffer, view_update_rate=2.0)
     memory = Memory(sample_size=0.25, queue_size=128)
 
     BATCHES = 100
@@ -111,7 +110,7 @@ if __name__ == "__main__":
 if __name__ == "__main__" and False:
     env = HexGame(size=7)
     env.current_player = 2
-    window = GameWindow(width=1000, height=600, game=env.copy(), agent=None, view_update_rate=2.0)
+    window = HexGUI(width=1000, height=600, game=env.copy(), agent=None, view_update_rate=2.0)
     window.run()
 
 
@@ -148,7 +147,7 @@ if __name__ == "__main__" and False:
 
     """ RENDERING """
     buffer = BufferAgent()
-    window = GameWindow(width=1000, height=600, game=env.copy(), agent=buffer, view_update_rate=2.0)
+    window = HexGUI(width=1000, height=600, game=env.copy(), agent=buffer, view_update_rate=2.0)
 
     RBUF_input = deque([], QUEUE_SIZE)
     RBUF_target = deque([], QUEUE_SIZE)

@@ -52,8 +52,8 @@ class HexGame(StateManager):
 
     @property
     def cnn_state(self):
-        player_state = (self.state == self.current_player).astype(np.int32)
-        opponent_state = (self.state == self.next_player).astype(np.int32)
+        player_state = (self.state == self.current_player).astype(np.int8)
+        opponent_state = (self.state == self.next_player).astype(np.int8)
 
         # Transposing the state for player two to be seen as win from top to bottom
         if self.current_player == PLAYERS[1]:

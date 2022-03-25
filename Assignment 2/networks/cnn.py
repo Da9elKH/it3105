@@ -11,14 +11,14 @@ import tensorflow as tf
 import math
 
 
-MODELS_FOLDER = "Assignment 2/models/"
+MODELS_FOLDER = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/models/"
 
 
 # https://github.com/AppliedDataSciencePartners/DeepReinforcementLearning/blob/b04e80409a26896ae0e5f1d4cbca603f9ae4eff2/loss.py
 def softmax_cross_entropy_with_logits(y_true, y_pred):
     p = y_pred
     pi = y_true
-    zero = tf.zeros(shape=tf.shape(pi), dtype=tf.float32)
+    zero = tf.zeros(shape = tf.shape(pi), dtype=tf.float32)
     where = tf.equal(pi, zero)
     negatives = tf.fill(tf.shape(pi), -100.0)
     p = tf.where(where, negatives, p)
@@ -44,39 +44,39 @@ class CNN:
         return cls(model=model)
 
     @classmethod
-    def build(cls, input_size: int, output_size: int, hidden_size: tuple[int, ...], learning_rate: float):
+    def build(cls, input_size: int, output_size: int, hidden_size: tuple[int, ...], learning_rate: float, momentum: float):
         """ Initialize the NN with the given depth and width for the problem environment """
 
         def conv(x):
-            x = Conv2D(filters=64, kernel_size=(3, 3), activation="linear", padding='same', data_format="channels_last")(x)
+            x = Conv2D(filters=64, kernel_size=(3, 3), use_bias=False, activation="linear", padding='same', data_format="channels_last")(x)
             x = BatchNormalization(axis=1)(x)
             x = swish(x)
             return x
 
         def residual(input_data):
             x = conv(input_data)
-            x = Conv2D(filters=64, kernel_size=(3, 3), activation='linear', padding='same', data_format="channels_last")(x)
+            x = Conv2D(filters=64, kernel_size=(3, 3), use_bias=False, activation='linear', padding='same', data_format="channels_last")(x)
             x = BatchNormalization(axis=1)(x)
             x = add([input_data, x])
             x = swish(x)
             return x
 
         def policy(x):
-            x = Conv2D(filters=2, kernel_size=(1, 1), activation='linear', padding='same', data_format="channels_last")(x)
+            x = Conv2D(filters=2, kernel_size=(1, 1), use_bias=False, activation='linear', padding='same', data_format="channels_last")(x)
             x = BatchNormalization(axis=1)(x)
             x = swish(x)
             x = Flatten()(x)
-            x = Dense(output_size, activation='softmax', name='policy')(x)
+            x = Dense(output_size, use_bias=False, activation='softmax', name='policy')(x)
             return x
 
         def value(x):
-            x = Conv2D(filters=1, kernel_size=(1,1), activation='linear', padding='same', data_format="channels_last")(x)
+            x = Conv2D(filters=1, kernel_size=(1,1), use_bias=False, activation='linear', padding='same', data_format="channels_last")(x)
             x = BatchNormalization(axis=1)(x)
             x = swish(x)
             x = Flatten()(x)
-            x = Dense(20, activation='linear')(x)
+            x = Dense(20, use_bias=False, activation='linear')(x)
             x = swish(x)
-            x = Dense(1, activation='tanh', name="value")(x)
+            x = Dense(1, use_bias=False, activation='tanh', name="value")(x)
             return x
 
         # Model build
@@ -94,7 +94,7 @@ class CNN:
         model = Model(inputs=[main_input], outputs=[pol, val])
         model.compile(
             loss={'value': 'mean_squared_error', 'policy': softmax_cross_entropy_with_logits},
-            optimizer=Adam(learning_rate=learning_rate),
+            optimizer=SGD(learning_rate=learning_rate, momentum=momentum),
             loss_weights={'value': 0.5, 'policy': 0.5}
         )
 
@@ -103,7 +103,7 @@ class CNN:
     """ MISC """
     def save_model(self, suffix):
         num = 1
-        name = lambda n: "(%d) " % n + suffix + ".h5"
+        name = lambda n: "(%d) " % n + f"{self.__class__.__name__}_" + suffix + ".h5"
 
         if self.model is not None:
             while path.exists(MODELS_FOLDER + name(num)):

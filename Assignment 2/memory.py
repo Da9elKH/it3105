@@ -5,7 +5,7 @@ import random
 
 
 class Memory:
-    def __init__(self, queue_size=1028, sample_size=0.1):
+    def __init__(self, queue_size=1028, sample_size=0.1, verbose=False):
         self._sample_size = sample_size
         self._lt_memory = deque([], maxlen=queue_size)
         self._st_memory = {
@@ -13,6 +13,7 @@ class Memory:
             "states": [],
             "distributions": [],
         }
+        self.verbose = False
 
     def register_result(self, result):
         self._st_memory["result"] = result
@@ -25,7 +26,9 @@ class Memory:
     def _store(self):
         length = len(self._st_memory["states"])
         assert length == len(self._st_memory["distributions"]), "Must save equal states and dist"
-        print(f"MEMORY: Storing {length} states to long-term-memory")
+
+        if self.verbose:
+            print(f"MEMORY: Storing {length} states to long-term-memory")
 
         # Store short term memory in long term memory
         for i in range(length):
@@ -47,6 +50,8 @@ class Memory:
     def sample(self):
         samples = random.sample(self._lt_memory, k=math.ceil(len(self._lt_memory) * self._sample_size))
         states, dists, results = zip(*samples)
-        print(f"MEMORY: Returning {len(states)} samples")
+
+        if self.verbose:
+            print(f"MEMORY: Returning {len(states)} samples")
 
         return states, dists, results

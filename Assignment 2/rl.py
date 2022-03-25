@@ -1,7 +1,7 @@
-from agents import ANNAgent, MCTSAgent
+from agents import ANNAgent, MCTSAgent, CNNAgent
 from mcts import MCTS
 from environments import HexGame
-from networks import ANN
+from networks import ANN, CNN
 from memory import Memory
 from tqdm import trange
 from topp import TOPP
@@ -12,18 +12,28 @@ class ReinforcementLearning:
         self.games = games
         self.models = []
 
-        self.environment = HexGame(size=4)
+        self.environment = HexGame(size=7)
+
+        """
         self.network = ANN.build(
             input_size=len(self.environment.flat_state),
             output_size=len(self.environment.legal_binary_moves),
             hidden_size=(200, 100, 50),
             learning_rate=0.01
         )
+        """
+        self.network = ANN.build(
+            input_size=len(self.environment.flat_state),
+            output_size=len(self.environment.legal_binary_moves),
+            hidden_size=(200, 100, 50),
+            learning_rate=0.01
+        )
+
         self.mcts = MCTS(
             rollout_policy_agent=ANNAgent(network=self.network),
             environment=self.environment,
-            rollouts=1000,
-            time_budget=0.5,
+            rollouts=1500,
+            #time_budget=0,
             epsilon=1.00,
             verbose=False,
             c=1.0
@@ -33,7 +43,9 @@ class ReinforcementLearning:
             model=self.mcts,
         )
         self.memory = Memory(
-            sample_size=0.25, queue_size=128
+            sample_size=0.25,
+            queue_size=256,
+            verbose=False
         )
 
     def train(self):
@@ -46,9 +58,6 @@ class ReinforcementLearning:
 
                 t.set_description(f"Game {i}")
                 self.environment.reset()
-
-                # Epsilon decay
-                self.mcts.epsilon *= 0.985
 
                 while not self.environment.is_game_over:
                     # Run MCTS
@@ -66,6 +75,9 @@ class ReinforcementLearning:
 
                 if i % 25 == 0:
                     self.save_model(i)
+
+                # Epsilon decay
+                self.mcts.epsilon *= 0.9955
 
         self.check_models()
 
@@ -91,5 +103,5 @@ class ReinforcementLearning:
 
 
 if __name__ == "__main__":
-    rl = ReinforcementLearning(games=200)
+    rl = ReinforcementLearning(games=1000)
     rl.train()

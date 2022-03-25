@@ -7,7 +7,7 @@ from tensorflow.keras.models import Model
 from os import path
 import numpy as np
 
-MODELS_FOLDER = "models/"
+MODELS_FOLDER = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/models/"
 
 class ANN:
     def __init__(self, model: Model):
@@ -41,7 +41,7 @@ class ANN:
     """ MISC """
     def save_model(self, suffix):
         num = 1
-        name = lambda n: "(%d) " % n + f"_{self.__class__.__name__}_" + suffix + ".h5"
+        name = lambda n: "(%d) " % n + f"{self.__class__.__name__}_" + suffix + ".h5"
 
         if self.model is not None:
             while path.exists(MODELS_FOLDER + name(num)):

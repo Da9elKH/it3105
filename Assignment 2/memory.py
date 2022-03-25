@@ -23,11 +23,12 @@ class Memory:
         self._st_memory["distributions"].append(distribution)
 
     def _store(self):
-        print("MEMORY: Storing to long-term-memory")
-        assert len(self._st_memory["states"]) == len(self._st_memory["distributions"]), "Must save equal states and dist"
+        length = len(self._st_memory["states"])
+        assert length == len(self._st_memory["distributions"]), "Must save equal states and dist"
+        print(f"MEMORY: Storing {length} states to long-term-memory")
 
         # Store short term memory in long term memory
-        for i in range(len(self._st_memory["states"])):
+        for i in range(length):
             result = self._st_memory["result"]
             state = self._st_memory["states"][i]
             dist = self._st_memory["distributions"][i]
@@ -48,5 +49,4 @@ class Memory:
         states, dists, results = zip(*samples)
         print(f"MEMORY: Returning {len(states)} samples")
 
-        return np.array(states), {"value": np.array(results), "policy": np.array(dists)}
-
+        return states, dists, results

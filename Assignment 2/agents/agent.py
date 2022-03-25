@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from misc.state_manager import StateManager
+from misc import StateManager, Move
 import numpy as np
 import random
 
@@ -7,6 +7,9 @@ import random
 class Agent(ABC):
     def __init__(self, environment: StateManager = None):
         self.environment = environment
+        if self.environment:
+            self.environment.register_reset_hook(self.reset)
+            self.environment.register_move_hook(self.move)
 
     def get_move(self, greedy=False):
         distribution = self.distribution
@@ -22,4 +25,10 @@ class Agent(ABC):
     @property
     @abstractmethod
     def distribution(self):
+        pass
+
+    def reset(self):
+        pass
+
+    def move(self, move: Move):
         pass

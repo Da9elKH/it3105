@@ -9,7 +9,6 @@ import numpy as np
 
 MODELS_FOLDER = "models/"
 
-
 class ANN:
     def __init__(self, model: Model):
         self.model = model
@@ -17,8 +16,9 @@ class ANN:
     def predict(self, x):
         return self.model(x)
 
-    def train_on_batch(self, x, y):
-        return self.model.train_on_batch(np.array(x), np.array(y))
+    def train_on_batch(self, states, distributions, results):
+        x, y = np.array(states), np.array(distributions)
+        return self.model.train_on_batch(x, y)
 
     @classmethod
     def from_file(cls, filename):

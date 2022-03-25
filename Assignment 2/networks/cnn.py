@@ -8,9 +8,10 @@ from tensorflow.keras.activations import swish
 from os import path
 import numpy as np
 import tensorflow as tf
+import math
 
 
-MODELS_FOLDER = "models/"
+MODELS_FOLDER = "Assignment 2/models/"
 
 
 # https://github.com/AppliedDataSciencePartners/DeepReinforcementLearning/blob/b04e80409a26896ae0e5f1d4cbca603f9ae4eff2/loss.py
@@ -32,7 +33,8 @@ class CNN:
     def predict(self, x):
         return self.model(x)
 
-    def train_on_batch(self, x, y):
+    def train_on_batch(self, states, distributions, results):
+        x, y = np.array(states), {"value": np.array(results), "policy": np.array(distributions)}
         return self.model.train_on_batch(x, y)
 
     @classmethod

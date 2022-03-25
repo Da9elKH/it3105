@@ -12,7 +12,6 @@ from unionfind import UnionFind
 from misc.state_manager import StateManager
 from copy import deepcopy
 from typing import TypeVar, Generic
-import config
 from itertools import product
 
 
@@ -23,12 +22,12 @@ THexGame = TypeVar("THexGame", bound="HexGame")
 
 class HexGame(StateManager):
     def __init__(self, size=5, start_player=PLAYERS[0], state=np.zeros((1,), dtype=np.int8)):
+        super().__init__()
         self.size = size
         self._start_player = start_player
         self._uf = self._uf_init()
 
         # These will be updated in state.setter
-        self.current_player = None
         self._is_game_over = None
         self._legal_moves = set([])
 
@@ -106,6 +105,11 @@ class HexGame(StateManager):
             if not self.is_game_over:
                 # Switch player
                 self.current_player = self.next_player
+
+            # Broadcast move to agents following this state
+            self.broadcast_move(move)
+        else:
+            raise ValueError(f"Move {move} is not allowed")
 
     @property
     def legal_moves(self):
@@ -195,6 +199,7 @@ class HexGame(StateManager):
         self._start_player = start_player if start_player else self._start_player
         self._uf = self._uf_init()
         self.state = 0
+        self.broadcast_reset()
 
 
 class OldHexGame(StateManager, Generic[THexGame]):

@@ -1,14 +1,10 @@
-from misc.state_manager import StateManager
-from actor import Actor
+from misc import StateManager, Move
+from agents import Agent
 from .node import Node
-from misc.types import Move
-from misc.state_manager import StateManager
-from agents.agent import Agent
 import random
 import numpy as np
 import time
 import graphviz
-from typing import Callable
 
 
 class MCTS:
@@ -103,7 +99,6 @@ class MCTS:
         Simulate a game based on the rollout policy and return the winning player
         """
         # environment = environment.copy()
-
         while not environment.is_game_over:
             action = self._rollout_policy(environment, epsilon=self.epsilon)
             environment.play(action)
@@ -137,7 +132,7 @@ class MCTS:
 
         return dist
 
-    def move(self, move: Move, update_environment=True):
+    def move(self, move: Move):
 
         # Find or set new root node based on move
         self.root = next(
@@ -148,12 +143,7 @@ class MCTS:
         # Update the parent to be none.
         self.root.parent = None
 
-        # If environment should be updated
-        if update_environment:
-            self.environment.play(self.root.move)
-
-    def reset(self, environment: StateManager = None):
-        # self.environment = environment.copy() if environment is not None else self._reset_environment.copy()
+    def reset(self):
         self.root = Node(player=self.environment.current_player)
 
     def draw(self):

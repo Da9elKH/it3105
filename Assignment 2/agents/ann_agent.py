@@ -1,13 +1,11 @@
-from .agent import Agent
+from agents import Agent
+from networks import ANN
 from misc.state_manager import StateManager
-from ann import ANN
-from cnn import CNN
-from typing import Union
 import numpy as np
 
 
 class ANNAgent(Agent):
-    def __init__(self, environment: StateManager = None, network: Union[CNN, ANN] = None):
+    def __init__(self, environment: StateManager = None, network: ANN = None):
         super(ANNAgent, self).__init__(environment)
         self.network = network
 

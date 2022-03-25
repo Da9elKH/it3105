@@ -7,7 +7,7 @@ import time
 import numpy as np
 from collections import deque
 from tqdm import trange
-from cnn import CNN
+from networks.cnn import CNN
 from mcts.mcts import MCTS
 from memory import Memory
 
@@ -105,7 +105,6 @@ if __name__ == "__main__":
             if i % 10 == 0:
                 model_name = lambda size, batch: f"S{size}_B{i}"
                 network.save_model(suffix=model_name(env.size, BATCHES))
-
 
 if __name__ == "__main__" and False:
     env = HexGame(size=7)

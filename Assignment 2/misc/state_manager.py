@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Callable
+from typing import TypeVar, Generic, Callable, List
 from .types import Move
 
 TStateManager = TypeVar("TStateManager", bound="StateManager")
@@ -8,8 +8,8 @@ TStateManager = TypeVar("TStateManager", bound="StateManager")
 class StateManager(ABC, Generic[TStateManager]):
     def __init__(self):
         self.current_player = None
-        self._reset_hooks: list[Callable] = []
-        self._move_hooks: list[Callable] = []
+        self._reset_hooks: List[Callable] = []
+        self._move_hooks: List[Callable] = []
 
     @property
     @abstractmethod
@@ -19,13 +19,13 @@ class StateManager(ABC, Generic[TStateManager]):
 
     @property
     @abstractmethod
-    def legal_moves(self) -> list[Move]:
+    def legal_moves(self) -> List[Move]:
         """ Returns a list of available moves as indices in the state """
         pass
 
     @property
     @abstractmethod
-    def legal_binary_moves(self) -> list[int]:
+    def legal_binary_moves(self) -> List[int]:
         """ Returns a list of ones and zeros, where ones are legal moves """
         pass
 
@@ -47,7 +47,7 @@ class StateManager(ABC, Generic[TStateManager]):
 
     @property
     @abstractmethod
-    def flat_state(self) -> list[int]:
+    def flat_state(self) -> List[int]:
         """ Returns a state to be used together with neural networks """
         pass
 

@@ -6,6 +6,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.models import Model
 from tensorflow.keras.activations import swish
 from os import path
+from typing import Tuple
 import numpy as np
 import tensorflow as tf
 import math
@@ -44,7 +45,7 @@ class CNN:
         return cls(model=model)
 
     @classmethod
-    def build(cls, input_size: int, output_size: int, hidden_size: tuple[int, ...], learning_rate: float, momentum: float):
+    def build(cls, input_size: int, output_size: int, hidden_size: Tuple[int, ...], learning_rate: float, momentum: float):
         """ Initialize the NN with the given depth and width for the problem environment """
 
         def conv(x):

@@ -2,6 +2,7 @@ from misc.state_manager import StateManager
 from misc.types import Move
 from copy import deepcopy, copy
 import numpy as np
+from typing import List
 
 class Nim(StateManager):
     def __init__(self, num_stones, max_choice):
@@ -19,7 +20,7 @@ class Nim(StateManager):
         return self.num_stones == 0
 
     @property
-    def legal_moves(self) -> list[int]:
+    def legal_moves(self) -> List[int]:
         return list(range(1, min(self.max_choice, self.num_stones) + 1))
 
     def legal_moves_binary(self):
@@ -37,7 +38,7 @@ class Nim(StateManager):
             return -1
 
     @property
-    def flat_state(self) -> list[int]:
+    def flat_state(self) -> List[int]:
         """ Returns a state to be used together with neural networks """
         return [self.num_stones]
 

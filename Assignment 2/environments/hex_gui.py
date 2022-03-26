@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Dict, Tuple, List
 import arcade
 import arcade.gui
 import networkx as nx
@@ -192,7 +192,7 @@ def centered_zero(i):
 
 
 class Piece:
-    def __init__(self, location: tuple[float, float], player: int, radius: float, active: bool = False):
+    def __init__(self, location: Tuple[float, float], player: int, radius: float, active: bool = False):
         self.location = location
         self.player = player
         self.active = active
@@ -217,7 +217,7 @@ class Piece:
 
 
 class Hexagon:
-    def __init__(self, radius: int, center: tuple[float, float]):
+    def __init__(self, radius: int, center: Tuple[float, float]):
         self.radius = radius
         self.center = center
         self.points = self._generate_points()
@@ -257,7 +257,7 @@ class Hexagon:
                           active=(not hover))
             piece.draw()
 
-    def _generate_points(self) -> list[tuple[float, float]]:
+    def _generate_points(self) -> List[Tuple[float, float]]:
         points = []
         for i, j, k in [[-1, 1, 0], [0, 0, 1], [1, 1, 0], [1, -1, 0], [0, 0, -1], [-1, -1, 0]]:
             points.append((self.center[0] + i * self.width, self.center[1] + j * self.height / 2 + k * self.height))
@@ -273,7 +273,7 @@ class StateRendering:
         self._r = round((window[1] - 50) / (3 * self._shape[0] - 1))
         self._start = (window[0] / 2, 25)
 
-        self.hexagons: dict[tuple[int, int], Hexagon] = {}
+        self.hexagons: Dict[Tuple[int, int], Hexagon] = {}
         self._build_matrix()
 
         self._hover_indices = -1, -1

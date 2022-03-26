@@ -4,6 +4,7 @@ from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import load_model
 from tensorflow.keras.models import Model
+from typing import Tuple
 from os import path
 import numpy as np
 
@@ -27,7 +28,7 @@ class ANN:
         return cls(model=model)
 
     @classmethod
-    def build(cls, input_size: int, output_size: int, hidden_size: tuple[int, ...], learning_rate: float):
+    def build(cls, input_size: int, output_size: int, hidden_size: Tuple[int, ...], learning_rate: float):
         """ Initialize the NN with the given depth and width for the problem environment """
         model = Sequential()
         model.add(Dense(input_size, activation="relu", input_dim=input_size))

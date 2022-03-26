@@ -1,6 +1,6 @@
 from collections import deque
 from functools import lru_cache
-from typing import Union
+from typing import Union, Tuple
 
 import arcade
 import arcade.gui
@@ -11,8 +11,9 @@ from agents.agent import Agent
 from unionfind import UnionFind
 from misc.state_manager import StateManager
 from copy import deepcopy
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, Tuple, List
 from itertools import product
+from misc import Move
 
 
 PLAYERS = (1, -1)
@@ -121,10 +122,10 @@ class HexGame(StateManager):
     def legal_binary_moves(self):
         return np.logical_not(self.state).astype(np.int8).flatten().tolist()
 
-    def transform_move_to_binary_move_index(self, move: tuple[int, int]) -> int:
+    def transform_move_to_binary_move_index(self, move: Move) -> int:
         return move[0] * self.size + move[1]
 
-    def transform_binary_move_index_to_move(self, binary_move_index: int) -> tuple[int, int]:
+    def transform_binary_move_index_to_move(self, binary_move_index: int) -> Move:
         return np.unravel_index(binary_move_index, shape=self.state.shape)
 
     @property
@@ -249,7 +250,7 @@ class OldHexGame(StateManager, Generic[THexGame]):
 
     """ MOVES """
     @property
-    def legal_moves(self) -> list[tuple[int, int]]:
+    def legal_moves(self) -> List[Move]:
         if self.is_game_over:
             return []
         return [tuple(x) for x in np.argwhere(self.state == 0).tolist()]
@@ -258,10 +259,10 @@ class OldHexGame(StateManager, Generic[THexGame]):
     def legal_binary_moves(self):
         return np.logical_not(self.state).astype(np.int32).flatten().tolist()
 
-    def transform_move_to_binary_move_index(self, move: tuple[int, int]) -> int:
+    def transform_move_to_binary_move_index(self, move: Move) -> int:
         return move[0] * self.size + move[1]
 
-    def transform_binary_move_index_to_move(self, binary_move_index: int) -> tuple[int, int]:
+    def transform_binary_move_index_to_move(self, binary_move_index: int) -> Move:
         return np.unravel_index(binary_move_index, shape=self.state.shape)
 
     @property
@@ -303,10 +304,10 @@ class OldHexGame(StateManager, Generic[THexGame]):
     def switch_player(self):
         self.current_player = self.next_player
 
-    def play(self, move: tuple[int, int]):
+    def play(self, move: Move):
         self.execute(move)
 
-    def execute(self, move: tuple[int, int]):
+    def execute(self, move: Move):
         if move in self.legal_moves:
             shadow_move = (move[0] + 1, move[1] + 1)
             self.state[move] = self.current_player
@@ -319,7 +320,7 @@ class OldHexGame(StateManager, Generic[THexGame]):
             if not self.is_game_over:
                 self.switch_player()
 
-    def _union_neighbors(self, move: tuple[int, int]):
+    def _union_neighbors(self, move: Move):
         r, c = move
         neighbors = [(r+1, c-1), (r, c-1), (r-1, c), (r-1, c+1), (r, c+1), (r+1, c)]
 

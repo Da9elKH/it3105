@@ -5,6 +5,7 @@ import random
 import numpy as np
 import time
 import graphviz
+from typing import List
 
 
 class MCTS:
@@ -24,7 +25,7 @@ class MCTS:
     """ POLICIES """
 
     @staticmethod
-    def _tree_policy(nodes: list[Node], c=1.0):
+    def _tree_policy(nodes: List[Node], c=1.0):
         move_values = [node.value(c=c) for node in nodes]
         best_node_index = np.argmax(move_values)
         node = nodes[best_node_index]

@@ -1,1 +1,2 @@
-Move = tuple[int, int]
+from typing import Tuple
+Move = Tuple[int, int]

@@ -46,13 +46,13 @@ class TOPP:
 
 
 if __name__ == "__main__":
-    env = HexGame(size=4)
+    env = HexGame(size=7)
     topp = TOPP(environment=env)
 
     #filenames = ["(1) _ANN_S4_B0.h5", "(1) _ANN_S4_B75.h5", "(1) _ANN_S4_B100.h5", "(1) _ANN_S4_B125.h5"]
-    filenames = ["(1) CNN_S4_B2.h5", "(1) CNN_S4_B3.h5"]
+    filenames = ["(1) ANN_S7_B175.h5", "(1) ANN_S7_B100.h5", "(1) ANN_S7_B50.h5", "(1) ANN_S7_B0.h5"]
 
     for filename in filenames:
-        topp.add_agent(filename, CNNAgent(environment=env, network=CNN.from_file(filename)))
+        topp.add_agent(filename, ANNAgent(environment=env, network=ANN.from_file(filename)))
 
     print(topp.tournament(100))

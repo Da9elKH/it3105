@@ -13,30 +13,30 @@ class ReinforcementLearning:
         self.models = []
 
         self.environment = HexGame(size=7)
-
-        """
         self.network = ANN.build(
             input_size=len(self.environment.flat_state),
             output_size=len(self.environment.legal_binary_moves),
             hidden_size=(200, 100, 50),
-            learning_rate=0.01
+            learning_rate=0.03
         )
         """
-        self.network = ANN.build(
-            input_size=len(self.environment.flat_state),
+        self.network = CNN.build(
+            input_size=self.environment.cnn_state.shape,
             output_size=len(self.environment.legal_binary_moves),
             hidden_size=(200, 100, 50),
-            learning_rate=0.01
+            learning_rate=0.1,
+            momentum=0.9
         )
+        """
 
         self.mcts = MCTS(
             rollout_policy_agent=ANNAgent(network=self.network),
             environment=self.environment,
             rollouts=1500,
-            #time_budget=0,
+            time_budget=5,
             epsilon=1.00,
             verbose=False,
-            c=1.0
+            c=1.5
         )
         self.agent = MCTSAgent(
             environment=self.environment,
@@ -62,10 +62,12 @@ class ReinforcementLearning:
                 while not self.environment.is_game_over:
                     # Run MCTS
                     best_move, distribution = self.agent.get_move(greedy=True)
-                    self.environment.play(best_move)
 
                     # Add state and distribution to memory
                     self.memory.register_state_and_distribution(self.environment.flat_state, distribution)
+
+                    # Play the move
+                    self.environment.play(best_move)
 
                 # Register result of game in memory
                 self.memory.register_result(self.environment.result)

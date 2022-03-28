@@ -5,7 +5,7 @@ from networks import ANN, CNN
 from memory import Memory
 from tqdm import trange
 from topp import TOPP
-
+import random
 
 class ReinforcementLearning:
     def __init__(self, games):
@@ -13,6 +13,8 @@ class ReinforcementLearning:
         self.models = []
 
         self.environment = HexGame(size=7)
+
+        """
         self.network = ANN.build(
             optimizer="adam",
             activation="relu",
@@ -22,31 +24,29 @@ class ReinforcementLearning:
             hidden_size=(100, 100, 50),
         )
         """
+
         self.network = CNN.build(
             input_size=self.environment.cnn_state.shape,
             output_size=len(self.environment.legal_binary_moves),
             hidden_size=(200, 100, 50),
-            learning_rate=0.1,
-            momentum=0.9
+            learning_rate=0.001,
         )
-        """
-
         self.mcts = MCTS(
-            rollout_policy_agent=ANNAgent(network=self.network),
+            rollout_policy_agent=CNNAgent(network=self.network),
             environment=self.environment,
-            rollouts=1000,
+            rollouts=800,
             #time_budget=1,
             epsilon=1,
             verbose=False,
-            c=1.5
+            c=1.4
         )
         self.agent = MCTSAgent(
             environment=self.environment,
             model=self.mcts,
         )
         self.memory = Memory(
-            sample_size=0.25,
-            queue_size=128,
+            sample_size=0.5,
+            queue_size=10000,
             verbose=False
         )
 
@@ -59,7 +59,8 @@ class ReinforcementLearning:
 
     def train(self):
         # Save model before training
-        self.save_model(0)
+        #self.save_model(0)
+        eps_decay = 0.05 ** (1. / self.games)
 
         with trange(1, self.games + 1) as t:
             for i in t:
@@ -72,7 +73,11 @@ class ReinforcementLearning:
                     best_move, distribution = self.agent.get_move(greedy=True)
 
                     # Add state and distribution to memory
-                    self.memory.register_state_and_distribution(self.environment.flat_state, distribution)
+                    self.memory.register_state_and_distribution(self.environment.cnn_state, distribution)
+
+                    # Add rotated state and distribution to memory
+                    if random.random() > 0.5:
+                        self.memory.register_state_and_distribution(self.environment.rotated_cnn_state, distribution[::-1])
 
                     # Play the move
                     self.environment.play(best_move)
@@ -81,13 +86,13 @@ class ReinforcementLearning:
                 self.memory.register_result(self.environment.result)
 
                 # Train actor on memory
-                self.network.train_on_batch(*self.memory.sample())
+                print(self.network.train_on_batch(*self.memory.sample()))
 
-                if i % 25 == 0:
+                if i % 5 == 0:
                     self.save_model(i)
 
                 # Epsilon decay
-                self.mcts.epsilon *= 0.962
+                self.mcts.epsilon *= eps_decay
 
         self.check_models()
 
@@ -113,5 +118,5 @@ class ReinforcementLearning:
 
 
 if __name__ == "__main__":
-    rl = ReinforcementLearning(games=101)
+    rl = ReinforcementLearning(games=200)
     rl.run()

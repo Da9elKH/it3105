@@ -22,7 +22,7 @@ THexGame = TypeVar("THexGame", bound="HexGame")
 
 
 class HexGame(StateManager):
-    def __init__(self, size=5, start_player=PLAYERS[0], state=np.zeros((1,), dtype=np.int8)):
+    def __init__(self, size=5, start_player=PLAYERS[0], state=np.zeros((1,))):
         super().__init__()
         self.size = size
         self._start_player = start_player
@@ -52,20 +52,28 @@ class HexGame(StateManager):
         return [self.current_player, *self.state.flatten()]
 
     @property
-    def cnn_state(self):
-        cnn_state = np.zeros((self.size + 4, self.size + 4))
-        cnn_state[:, :2] = cnn_state[:, -2:] = -1
-        cnn_state[:2, :] = cnn_state[-2:, :] = 1
-        cnn_state[2:-2, 2:-2] = self.state
+    def rotated_cnn_state(self):
+        return self._cnn_state(True)
 
-        player1 = (cnn_state == PLAYERS[0]).astype(np.int8)
-        player2 = (cnn_state == PLAYERS[1]).astype(np.int8)
-        empty = (cnn_state == 0).astype(np.int8)
+    @property
+    def cnn_state(self):
+        return self._cnn_state(False)
+
+    def _cnn_state(self, rotate=False):
+        #cnn_state = np.zeros((self.size + 4, self.size + 4))
+        #cnn_state[:, :2] = cnn_state[:, -2:] = -1
+        #cnn_state[:2, :] = cnn_state[-2:, :] = 1
+        #cnn_state[2:-2, 2:-2] = self.state
+
+        cnn_state = self.state if not rotate else self.state[::-1, ::-1]
+        player1 = (cnn_state == PLAYERS[0])
+        player2 = (cnn_state == PLAYERS[1])
+        empty = (cnn_state == 0)
 
         if self.current_player == PLAYERS[0]:
-            to_play = [np.ones(cnn_state.shape, dtype=np.int8), np.zeros(cnn_state.shape, dtype=np.int8)]
+            to_play = [np.ones(cnn_state.shape), np.zeros(cnn_state.shape)]
         else:
-            to_play = [np.zeros(cnn_state.shape, dtype=np.int8), np.ones(cnn_state.shape, dtype=np.int8)]
+            to_play = [np.zeros(cnn_state.shape), np.ones(cnn_state.shape)]
 
         # TODO: Add bridge patterns, as https://www.idi.ntnu.no/emner/it3105/materials/neural/gao-2017.pdf
 
@@ -89,7 +97,7 @@ class HexGame(StateManager):
             self.current_player = last_player * (-1)
 
     def _state_init(self):
-        shadow_state = np.zeros((self.size + 2, self.size + 2), dtype=np.int8)
+        shadow_state = np.zeros((self.size + 2, self.size + 2))
         shadow_state[:, 0] = shadow_state[:, -1] = PLAYERS[1]
         shadow_state[0, :] = shadow_state[-1, :] = PLAYERS[0]
         return shadow_state
@@ -129,7 +137,7 @@ class HexGame(StateManager):
 
     @property
     def legal_binary_moves(self):
-        return np.logical_not(self.state).astype(np.int8).flatten().tolist()
+        return np.logical_not(self.state).flatten().tolist()
 
     def transform_move_to_binary_move_index(self, move: Move) -> int:
         return move[0] * self.size + move[1]
@@ -224,8 +232,8 @@ class OldHexGame(StateManager, Generic[THexGame]):
         self.current_player, self.state, self.shadow_state, self._union_find, self._game_over = self.init_values()
 
     def init_values(self):
-        state = np.zeros((self.size, self.size), dtype=np.int32)
-        shadow_state = np.zeros((self.size + 2, self.size + 2), dtype=np.int32)
+        state = np.zeros((self.size, self.size))
+        shadow_state = np.zeros((self.size + 2, self.size + 2))
         shadow_state[:, 0] = shadow_state[:, -1] = self.players[0]
         shadow_state[0, :] = shadow_state[-1, :] = self.players[1]
         union_find = {
@@ -266,7 +274,7 @@ class OldHexGame(StateManager, Generic[THexGame]):
 
     @property
     def legal_binary_moves(self):
-        return np.logical_not(self.state).astype(np.int32).flatten().tolist()
+        return np.logical_not(self.state).flatten().tolist()
 
     def transform_move_to_binary_move_index(self, move: Move) -> int:
         return move[0] * self.size + move[1]
@@ -285,12 +293,12 @@ class OldHexGame(StateManager, Generic[THexGame]):
     def flat_state(self):
         bits = lambda s: format(s, f"0{2}b")
         state = [self.current_player, *self.state.flatten()]
-        return np.array([float(s) for s in list(''.join([bits(s) for s in state]))], dtype=np.int32)
+        return np.array([float(s) for s in list(''.join([bits(s) for s in state]))])
 
     @property
     def cnn_state(self):
-        player_state = (self.state == self.current_player).astype(np.int32)
-        opponent_state = (self.state == self.next_player).astype(np.int32)
+        player_state = (self.state == self.current_player)
+        opponent_state = (self.state == self.next_player)
 
         # Transposing the state for player two to be seen as win from top to bottom
         if self.current_player == self.players[1]:

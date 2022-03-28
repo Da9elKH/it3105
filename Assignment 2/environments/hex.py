@@ -53,15 +53,24 @@ class HexGame(StateManager):
 
     @property
     def cnn_state(self):
-        player_state = (self.state == self.current_player).astype(np.int8)
-        opponent_state = (self.state == self.next_player).astype(np.int8)
+        cnn_state = np.zeros((self.size + 4, self.size + 4))
+        cnn_state[:, :2] = cnn_state[:, -2:] = -1
+        cnn_state[:2, :] = cnn_state[-2:, :] = 1
+        cnn_state[2:-2, 2:-2] = self.state
 
-        # Transposing the state for player two to be seen as win from top to bottom
-        if self.current_player == PLAYERS[1]:
-            player_state = player_state.T
-            opponent_state = opponent_state.T
+        player1 = (cnn_state == PLAYERS[0]).astype(np.int8)
+        player2 = (cnn_state == PLAYERS[1]).astype(np.int8)
+        empty = (cnn_state == 0).astype(np.int8)
 
-        return np.moveaxis(np.array([player_state, opponent_state]), 0, 2)
+        if self.current_player == PLAYERS[0]:
+            to_play = [np.ones(cnn_state.shape, dtype=np.int8), np.zeros(cnn_state.shape, dtype=np.int8)]
+        else:
+            to_play = [np.zeros(cnn_state.shape, dtype=np.int8), np.ones(cnn_state.shape, dtype=np.int8)]
+
+        # TODO: Add bridge patterns, as https://www.idi.ntnu.no/emner/it3105/materials/neural/gao-2017.pdf
+
+        return np.moveaxis(
+            np.array([player1, player2, empty, *to_play]), 0, 2)
 
     def _on_state_updated(self):
         self._uf_state_sync()
@@ -92,7 +101,7 @@ class HexGame(StateManager):
         if isinstance(move, list):
             move = tuple(move)
 
-        if move in self.legal_moves:
+        if move in self.legal_moves and not self.is_game_over:
             # Register the move
             self.state[move] = self.current_player
             self._legal_moves.remove(move)

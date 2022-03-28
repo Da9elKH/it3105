@@ -99,6 +99,7 @@ class MCTS:
         """
         Simulate a game based on the rollout policy and return the winning player
         """
+
         # environment = environment.copy()
         while not environment.is_game_over:
             action = self._rollout_policy(environment, epsilon=self.epsilon)

@@ -7,7 +7,7 @@ TStateManager = TypeVar("TStateManager", bound="StateManager")
 
 class StateManager(ABC, Generic[TStateManager]):
     def __init__(self):
-        self.current_player = None
+        self.current_player: int = 1
         self._reset_hooks: List[Callable] = []
         self._move_hooks: List[Callable] = []
 

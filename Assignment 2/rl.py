@@ -1,6 +1,6 @@
-from agents import ANNAgent, MCTSAgent, CNNAgent
+from agents import ANNAgent, MCTSAgent, CNNAgent, RandomAgent, BufferAgent
 from mcts import MCTS
-from environments import HexGame
+from environments import HexGame, HexGUI
 from networks import ANN, CNN
 from memory import Memory
 from tqdm import trange
@@ -14,10 +14,12 @@ class ReinforcementLearning:
 
         self.environment = HexGame(size=7)
         self.network = ANN.build(
+            optimizer="adam",
+            activation="relu",
+            learning_rate=0.03,
             input_size=len(self.environment.flat_state),
             output_size=len(self.environment.legal_binary_moves),
-            hidden_size=(200, 100, 50),
-            learning_rate=0.03
+            hidden_size=(100, 100, 50),
         )
         """
         self.network = CNN.build(
@@ -32,9 +34,9 @@ class ReinforcementLearning:
         self.mcts = MCTS(
             rollout_policy_agent=ANNAgent(network=self.network),
             environment=self.environment,
-            rollouts=1500,
-            time_budget=5,
-            epsilon=1.00,
+            rollouts=1000,
+            #time_budget=1,
+            epsilon=1,
             verbose=False,
             c=1.5
         )
@@ -44,12 +46,18 @@ class ReinforcementLearning:
         )
         self.memory = Memory(
             sample_size=0.25,
-            queue_size=256,
+            queue_size=128,
             verbose=False
         )
 
-    def train(self):
+    def run(self, visualize=False):
+        if visualize:
+            gui = HexGUI(environment=self.environment)
+            gui.run_visualization_loop(lambda: self.train())
+        else:
+            self.train()
 
+    def train(self):
         # Save model before training
         self.save_model(0)
 
@@ -79,7 +87,7 @@ class ReinforcementLearning:
                     self.save_model(i)
 
                 # Epsilon decay
-                self.mcts.epsilon *= 0.9955
+                self.mcts.epsilon *= 0.962
 
         self.check_models()
 
@@ -105,5 +113,5 @@ class ReinforcementLearning:
 
 
 if __name__ == "__main__":
-    rl = ReinforcementLearning(games=1000)
-    rl.train()
+    rl = ReinforcementLearning(games=101)
+    rl.run()

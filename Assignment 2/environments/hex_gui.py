@@ -5,7 +5,10 @@ import networkx as nx
 import math
 from agents.agent import Agent
 from copy import deepcopy
-from .hex import HexGame, PLAYERS
+from environments import HexGame, PLAYERS
+from misc import Move
+from typing import Callable
+from time import sleep
 
 RED_COLOR = "fc766a"
 RED_COLOR_LIGHT = "fed1cd"
@@ -14,25 +17,29 @@ BLUE_COLOR_LIGHT = "bacbde"
 
 
 class HexGUI(arcade.Window):
-    def __init__(self, width, height, game: HexGame, agent: Union[Agent, None], view_update_rate=0.2):
+    def __init__(self, environment=HexGame(size=7), agent: Union[Agent, None] = None, width=1000, height=700, view_update_rate=None):
+        if agent:
+            view_update_rate = 0.2
+
         super().__init__(width, height, "Hex Game", update_rate=view_update_rate)
         arcade.set_background_color(arcade.color.WHITE)
 
         self._autoplay = False
         self.change = True
-        self.game = game
+        self.environment = environment
         self.agent = agent
         self._agent = None
-        self.renderer = StateRendering(state=self.game.state, window=(self.width, self.height))
+        self.renderer = StateRendering(state=self.environment.state, window=(self.width, self.height))
 
         self.state_meta = {}
         for location in self.renderer.hexagons.keys():
             self.state_meta[location] = ""
 
-        # Button
+        # Buttons
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
         self.v_box = arcade.gui.UIBoxLayout()
+
         replay_button = arcade.gui.UIFlatButton(text="Reset", width=100, height=30)
         autoplay_button = arcade.gui.UIFlatButton(text="Autoplay", width=100, height=30)
         next_button = arcade.gui.UIFlatButton(text="Next", width=100, height=30)
@@ -40,6 +47,7 @@ class HexGUI(arcade.Window):
         self.v_box.add(next_button.with_space_around(bottom=20))
         self.v_box.add(replay_button.with_space_around(bottom=20))
         self.v_box.add(autoplay_button.with_space_around(bottom=20))
+
         replay_button.on_click = self.reset
         autoplay_button.on_click = self.autoplay
         next_button.on_click = self.next_move
@@ -52,23 +60,34 @@ class HexGUI(arcade.Window):
                 align_x=self.width / 2 - 75,
                 child=self.v_box)
         )
-
         self.draw_board()
+        self.visualization_loop = None
+
+        # Register hooks
+        self.environment.register_move_hook(lambda move: self.draw_board())
+        self.environment.register_reset_hook(lambda: self.draw_board())
+
+    def run_visualization_loop(self, function: Callable):
+        self.visualization_loop = function
+        self.run()
 
     def on_draw(self):
         arcade.start_render()
 
+    def register_move_on_board(self, move: Move):
+        if not self.environment.is_game_over:
+            self.environment.play(move)
+
+    def hover_move_on_board(self, x: float, y: float):
+        self.renderer.hover(x, y, self.environment.current_player)
+        self.draw_board()
+
     def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
-        if not self.agent:
-            self.renderer.hover(x, y, self.game.current_player)
-            self.draw_board()
+        self.hover_move_on_board(x, y)
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
-        if not self.agent:
-            indices = self.renderer.indices_from_position(x, y)
-            self.game.play(indices)
-            print(self.game._shadow_state)
-            self.draw_board()
+        indices = self.renderer.indices_from_position(x, y)
+        self.register_move_on_board(indices)
 
     def on_update(self, delta_time):
         if self._autoplay:
@@ -76,29 +95,27 @@ class HexGUI(arcade.Window):
 
     def reset(self, _):
         self._autoplay = False
-        self.game.reset()
-        self.renderer = StateRendering(state=self.game.state, window=(self.width, self.height))
-        self.state_meta = {}
-        for location in self.renderer.hexagons.keys():
-            self.state_meta[location] = ""
-        self.agent = deepcopy(self._agent)
+        self.state_meta = {location: "" for location in self.renderer.hexagons.keys()}
+        self.environment.reset()
         self.draw_board()
 
     def autoplay(self, _):
         self._autoplay = not self._autoplay
+        if self.visualization_loop:
+            self.visualization_loop()
 
     def next_move(self, _):
         if self._agent is None:
             self._agent = deepcopy(self.agent)
 
-        if self.agent and not self.game.is_game_over:
+        if self.agent and not self.environment.is_game_over:
             action, meta = self.agent.get_move(greedy=True)
 
             if meta is not None:
                 for location, value in meta.items():
                     self.state_meta[location] = value
             if action is not None:
-                self.game.play(action)
+                self.environment.play(action)
             self.draw_board()
 
     def draw_board(self):
@@ -108,48 +125,49 @@ class HexGUI(arcade.Window):
         for location, hexagon in self.renderer.hexagons.items():
             arcade.draw_text(
                 str(self.state_meta[location]),
-                hexagon.center[0 ] -10,
+                hexagon.center[0]-10,
                 hexagon.center[1],
                 arcade.color.GRAY,
                 9,
                 50,
                 'left'
             )
+
         self.renderer.draw()
         self.manager.draw()
-        arcade.draw_text('Win: ' + str(self.game.is_game_over), 20, 20, arcade.color.BLACK, 15, 180, 'left')
 
-        if self.game.is_game_over:
+        if self.environment.is_game_over:
             self.draw_winner_line()
+
         arcade.finish_render()
 
     def draw_winner_line(self):
         # Build a grid graph with edges in x and y direction
-        graph = nx.grid_graph(dim=[self.game.size + 2, self.game.size + 2])
+        graph = nx.grid_graph(dim=[self.environment.size + 2, self.environment.size + 2])
 
         # Add extra edges to be compatible with hexagons
         graph.add_edges_from(
             [
                 ((x + 1, y), (x, y + 1))
-                for x in range(self.game.size + 1)
-                for y in range(self.game.size + 1)
+                for x in range(self.environment.size + 1)
+                for y in range(self.environment.size + 1)
             ])
 
         # Set all weights to 1 for all edges in the graph
         nx.set_edge_attributes(graph, 1, "weight")
 
         # Set boarder edges to lower weight to get correct path
-        for i in range(0, self.game.size + 1):
+        for i in range(0, self.environment.size + 1):
             # BLUE
             nx.set_edge_attributes(graph, {((0, i), (0, i + 1)): {"weight": 0}})
-            nx.set_edge_attributes(graph, {((self.game.size + 1, i), (self.game.size + 1, i + 1)): {"weight": 0}})
+            nx.set_edge_attributes(graph, {((self.environment.size + 1, i), (self.environment.size + 1, i + 1)): {"weight": 0}})
 
             # RED
             nx.set_edge_attributes(graph, {((i, 0), (i + 1, 0)): {"weight": 0}})
-            nx.set_edge_attributes(graph, {((i, self.game.size + 1), (i + 1, self.game.size + 1)): {"weight": 0}})
+            nx.set_edge_attributes(graph, {((i, self.environment.size + 1), (i + 1, self.environment.size + 1)): {"weight": 0}})
 
         # Get the cluster with all points included in the path between start and end
-        cluster = self.game.uf.component("start")
+        cluster = self.environment.uf.component("start")
 
         cluster.remove("start")
         cluster.remove("end")
@@ -161,17 +179,17 @@ class HexGUI(arcade.Window):
 
         # Set the target and source node for the shortest path
         # This source node and target node is part of the border in the shadow-state
-        if self.game.current_player == PLAYERS[1]:
-            source, target = (1, 0), (self.game.size, self.game.size + 1)
+        if self.environment.current_player == PLAYERS[1]:
+            source, target = (1, 0), (self.environment.size, self.environment.size + 1)
         else:
-            source, target = (0, 1), (self.game.size + 1, self.game.size)
+            source, target = (0, 1), (self.environment.size + 1, self.environment.size)
 
         points = nx.shortest_path(graph, source=source, target=target, weight="weight")
 
         # Adjust the indices from shadow state to be equivalent with the normal state
         winner_path = []
         for i, j in [(i - 1, j - 1) for i, j in points]:
-            if self.game.size - 1 >= i >= 0 and self.game.size - 1 >= j >= 0:
+            if self.environment.size - 1 >= i >= 0 and self.environment.size - 1 >= j >= 0:
                 winner_path.append((i, j))
 
         # Convert indices of hexagons to center_points in window
@@ -347,3 +365,13 @@ class StateRendering:
                     radius=self._r,
                 )
 
+
+from agents import RandomAgent, MCTSAgent
+from topp import TOPP
+from mcts import MCTS
+import time
+
+if __name__ == "__main__":
+    env = HexGame(size=4)
+    gui = HexGUI(environment=env)
+    gui.run()

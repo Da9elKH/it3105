@@ -24,7 +24,7 @@ class Nim(StateManager):
         return list(range(1, min(self.max_choice, self.num_stones) + 1))
 
     def legal_moves_binary(self):
-        moves = np.zeros(self.max_choice, dtype=np.int32)
+        moves = np.zeros(self.max_choice)
         for i in self.legal_moves:
             moves[i - 1] = 1
         return moves

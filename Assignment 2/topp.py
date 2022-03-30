@@ -1,6 +1,6 @@
 from agents import Agent, ANNAgent, CNNAgent, MCTSAgent
 from misc import StateManager
-from environments import HexGame
+from environments import HexGame, HexGUI
 from tqdm import tqdm, trange
 from itertools import permutations
 from networks import ANN, CNN
@@ -41,17 +41,15 @@ class TOPP:
             self.environment.play(move)
         return self.environment.result, self.environment.current_player
 
+
 if __name__ == "__main__":
     env = HexGame(size=7)
     topp = TOPP(environment=env)
+    gui = HexGUI(environment=env)
 
-    #filenames = ["(1) _ANN_S4_B0.h5", "(1) _ANN_S4_B75.h5", "(1) _ANN_S4_B100.h5", "(1) _ANN_S4_B125.h5"]
-    #filenames = ["(1) ANN_S7_B175.h5", "(1) ANN_S7_B100.h5", "(1) ANN_S7_B50.h5", "(1) ANN_S7_B0.h5"]
+    filenames = ["(1) CNN_S7_B5.h5", "(1) CNN_S7_B85.h5"]
 
-    #for filename in filenames:
-    #    topp.add_agent(filename, ANNAgent(environment=env, network=ANN.from_file(filename)))
+    for filename in filenames:
+        topp.add_agent(filename, CNNAgent(environment=env, network=CNN.from_file(filename)))
 
-    topp.add_agent("(1) ANN_S7_B0.h5", ANNAgent(environment=env, network=ANN.from_file("(1) ANN_S7_B0.h5")))
-    topp.add_agent("(1) ANN_S7_B25.h5", ANNAgent(environment=env, network=ANN.from_file("(1) ANN_S7_B25.h5")))
-    topp.tournament(10)
-    print(topp.stats)
+    gui.run_visualization_loop(lambda: topp.tournament(50))

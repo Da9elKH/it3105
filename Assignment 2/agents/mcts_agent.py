@@ -11,7 +11,7 @@ class MCTSAgent(Agent):
             environment=environment,
             **{
                 "rollouts": 1000,
-                "time_budget": 3,
+                "time_budget": 1,
                 "epsilon": 1.00,
                 "verbose": False,
                 "c": 1.0,

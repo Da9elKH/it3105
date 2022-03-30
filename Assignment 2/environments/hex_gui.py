@@ -365,12 +365,6 @@ class StateRendering:
                     radius=self._r,
                 )
 
-
-from agents import RandomAgent, MCTSAgent
-from topp import TOPP
-from mcts import MCTS
-import time
-
 if __name__ == "__main__":
     env = HexGame(size=4)
     gui = HexGUI(environment=env)

@@ -18,6 +18,9 @@ class CNNAgent(Agent):
         dist = policy.numpy().flatten()
         #dist = self.network.predict(np.array([self.environment.cnn_state]))[0].numpy()
         dist = dist * self.environment.legal_binary_moves
+
+        # dist = dist**(1/T) ()
+
         dist = dist / sum(dist)
         return dist
 

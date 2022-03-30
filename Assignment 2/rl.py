@@ -10,8 +10,9 @@ import random
 class ReinforcementLearning:
     def __init__(self, games):
         self.games = games
-        self.models = []
+        self.eps_decay = 0.05 ** (1. / self.games)
 
+        self.models = []
         self.environment = HexGame(size=7)
 
         """
@@ -26,18 +27,16 @@ class ReinforcementLearning:
         """
 
         self.network = CNN.build(
-            input_size=self.environment.cnn_state.shape,
-            output_size=len(self.environment.legal_binary_moves),
-            hidden_size=(200, 100, 50),
+            input_shape=self.environment.cnn_state.shape,
             learning_rate=0.001,
         )
         self.mcts = MCTS(
             rollout_policy_agent=CNNAgent(network=self.network),
             environment=self.environment,
-            rollouts=800,
-            #time_budget=1,
+            rollouts=1000,
+            time_budget=1,
             epsilon=1,
-            verbose=False,
+            verbose=True,
             c=1.4
         )
         self.agent = MCTSAgent(
@@ -59,8 +58,8 @@ class ReinforcementLearning:
 
     def train(self):
         # Save model before training
-        #self.save_model(0)
-        eps_decay = 0.05 ** (1. / self.games)
+
+        self.save_model(0)
 
         with trange(1, self.games + 1) as t:
             for i in t:
@@ -92,7 +91,7 @@ class ReinforcementLearning:
                     self.save_model(i)
 
                 # Epsilon decay
-                self.mcts.epsilon *= eps_decay
+                self.mcts.epsilon *= self.eps_decay
 
         self.check_models()
 

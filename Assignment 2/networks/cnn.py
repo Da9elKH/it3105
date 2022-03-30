@@ -4,12 +4,8 @@ from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.models import load_model
 from tensorflow.keras.models import Model
-from tensorflow.keras.activations import swish, relu, softmax
 from os import path
-from typing import Tuple
 import numpy as np
-import tensorflow as tf
-import math
 
 
 MODELS_FOLDER = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/models/"
@@ -33,9 +29,10 @@ class CNN:
         return cls(model=model)
 
     @classmethod
-    def build(cls, input_size: int, output_size: int, hidden_size: Tuple[int, ...], learning_rate: float, momentum: float=None):
+    def build(cls, learning_rate: float, input_shape: tuple):
         """ Initialize the NN with the given depth and width for the problem environment """
         model = Sequential()
+        model.add(Input(shape=input_shape))
 
         # Convolutional layers
         for _ in range(4):
@@ -48,6 +45,7 @@ class CNN:
         model.add(Softmax())
 
         model.compile(loss=CategoricalCrossentropy(), optimizer=Adam(learning_rate=learning_rate), metrics=["accuracy"])
+
         return cls(model=model)
 
     """ MISC """
@@ -60,4 +58,3 @@ class CNN:
                 num += 1
             self.model.save(MODELS_FOLDER + name(num))
         return name(num)
-

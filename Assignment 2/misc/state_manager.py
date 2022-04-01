@@ -1,15 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Callable, List
 from .types import Move
-
 TStateManager = TypeVar("TStateManager", bound="StateManager")
 
 
 class StateManager(ABC, Generic[TStateManager]):
     def __init__(self):
         self.current_player: int = 1
-        self._reset_hooks: List[Callable] = []
-        self._move_hooks: List[Callable] = []
+        self._reset_hooks: set[Callable] = set([])
+        self._move_hooks: set[Callable] = set([])
 
     @property
     @abstractmethod
@@ -77,7 +76,7 @@ class StateManager(ABC, Generic[TStateManager]):
         [hook(move) for hook in self._move_hooks]
 
     def register_reset_hook(self, function: Callable):
-        self._reset_hooks.append(function)
+        self._reset_hooks.add(function)
 
     def register_move_hook(self, function: Callable):
-        self._move_hooks.append(function)
+        self._move_hooks.add(function)

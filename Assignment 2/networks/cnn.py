@@ -4,8 +4,13 @@ from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.models import load_model
 from tensorflow.keras.models import Model
+
 from os import path
 import numpy as np
+
+#import wandb
+#wandb.init(project='hex')
+#from wandb.keras import WandbCallback
 
 
 MODELS_FOLDER = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/models/"
@@ -19,8 +24,19 @@ class CNN:
         return self.model(x), None
 
     def train_on_batch(self, states, distributions, results):
-        x, y = np.array(states), np.array(distributions)
+        x = states
+        y = distributions
+
+        if not isinstance(states, np.ndarray):
+            x = np.array(states)
+        if not isinstance(distributions, np.ndarray):
+            y = np.array(distributions)
+
         return self.model.train_on_batch(x, y, return_dict=True)
+
+    def fit(self, x, y):
+        self.model.fit(x, y, batch_size=256, epochs=50)#, callbacks=[WandbCallback()])
+
 
     @classmethod
     def from_file(cls, filename):
@@ -32,7 +48,7 @@ class CNN:
     def build(cls, learning_rate: float, input_shape: tuple):
         """ Initialize the NN with the given depth and width for the problem environment """
         model = Sequential()
-        model.add(Input(shape=input_shape))
+        model.add(Input(shape=(7, 7, 5)))
 
         # Convolutional layers
         for _ in range(4):
@@ -42,6 +58,7 @@ class CNN:
         # Policy layer
         model.add(Conv2D(filters=1, kernel_size=(1, 1), padding='same', data_format="channels_last"))
         model.add(Flatten())
+        model.add(Dense(49))
         model.add(Softmax())
 
         model.compile(loss=CategoricalCrossentropy(), optimizer=Adam(learning_rate=learning_rate), metrics=["accuracy"])

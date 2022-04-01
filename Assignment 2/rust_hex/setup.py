@@ -4,7 +4,8 @@ import numpy
 
 setup(
     name='Hex Game',
-    ext_modules=cythonize(["rust_mcts.pyx", "rust_hex.py"]),
+    ext_modules=cythonize(["modules.pyx"]),
     include_dirs=[numpy.get_include()],
     zip_safe=False,
+    annotate=True
 )

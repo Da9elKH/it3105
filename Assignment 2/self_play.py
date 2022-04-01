@@ -2,32 +2,23 @@ import ray
 import numpy as np
 from agents import MCTSAgent
 from memory import Memory
+from environments import HexGame
+from mcts import MCTS
+
 
 @ray.remote
 class Worker:
     def __init__(self):
 
-        # Cython implementation of board
-        import pyximport
-        pyximport.install(
-            language_level=3,
-            setup_args={
-                "include_dirs": [np.get_include()],
-                "define_macros": [('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')]
-            }
-        )
-        from rust_hex import modules
-
         self.memory = Memory(queue_size=1000, sample_size=1)
-        self.environment = modules.HexGame(size=7)
+        self.environment = HexGame(size=7)
         self.agent = MCTSAgent(
             environment=self.environment,
-            model=modules.MCTS(
+            mcts=MCTS(
                 environment=self.environment,
-                time_budget=1.5,
-                rollouts=0,
+                use_time_budget=False,
+                rollouts=1000,
                 c=1.4,
-                verbose=True
             )
         )
 
@@ -39,7 +30,7 @@ class Worker:
     def run(self):
         while not self.environment.is_game_over:
             # Run MCTS
-            best_move, distribution = self.agent.get_move(greedy=True)
+            best_move, distribution = self.agent.get_move(greedy=False)
 
             # Add state and distribution to memory
             self.memory.register("player", self.environment.current_player)
@@ -81,8 +72,6 @@ if __name__ == "__main__":
             states.extend(sample[2])
             dists.extend(sample[3])
             results.extend(sample[4])
-
-        print(players)
 
         filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/train_samples"
         np.savetxt(filename + '_players.txt', players)

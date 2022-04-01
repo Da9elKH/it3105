@@ -1,9 +1,14 @@
+**/__pycache__/
+**/wandb/
+*.zip
+*.log
+.DS_Store
+
+/it3105/
 /venv
 /.idea
-**/__pycache__/
-*.zip
-.DS_Store
-/Assignment 3
-/it3105/
 
 Assignment 2/models/
+Assignment 2/cases/
+
+/Assignment 3

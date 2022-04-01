@@ -1,6 +1,7 @@
 from typing import TypeVar, Generic, Optional
 from misc.types import Move
 import numpy as np
+import math
 
 TNode = TypeVar("TNode", bound="Node")
 
@@ -9,7 +10,7 @@ class Node(Generic[TNode]):
     def __init__(self, parent: Optional[TNode] = None, move: Optional[Move] = None, player: int = 1):
         self.parent = parent
         self.move = move
-        self.children = []
+        self.children = {}
         self.player = player
 
         self.N = 0
@@ -17,7 +18,7 @@ class Node(Generic[TNode]):
 
     def value(self, c=1.0):
         score = 0 if self.N == 0 else (self.Q / self.N)
-        explr = c * np.sqrt(np.log(self.parent.N) / (self.N + 1))
+        explr = c * math.sqrt(math.log(self.parent.N) / (self.N + 1))
         return score + explr
 
     def visit(self):
@@ -27,4 +28,4 @@ class Node(Generic[TNode]):
         self.Q += -1 if winner == self.player else 1
 
     def distribution(self):
-        return dict([(child.move, child.N / self.N) for child in self.children])
+        return {move: child.N/self.N for move, child in self.children.items()}

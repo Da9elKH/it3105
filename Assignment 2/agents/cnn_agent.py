@@ -15,8 +15,11 @@ class CNNAgent(Agent):
         policy, value = self.network.predict(np.array([self.environment.cnn_state]))
         self._value = value
 
-        dist = policy.numpy().flatten()
-        #dist = self.network.predict(np.array([self.environment.cnn_state]))[0].numpy()
+        if self.environment.current_player == -1:
+            dist = policy.numpy().reshape(self.environment.state.shape).T.flatten()
+        else:
+            dist = policy.numpy().flatten()
+
         dist = dist * self.environment.legal_binary_moves
 
         # dist = dist**(1/T) ()
@@ -26,6 +29,7 @@ class CNNAgent(Agent):
 
     @property
     def value(self):
+        raise ValueError("NOT IMPLEMENTED")
         if self._value:
             return self._value
         else:

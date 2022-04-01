@@ -1,24 +1,17 @@
-from collections import deque
 from functools import lru_cache
-from typing import Union, Tuple
-
-import arcade
-import arcade.gui
 import numpy as np
-import networkx as nx
-import math
-from agents.agent import Agent
 from unionfind import UnionFind
 from misc.state_manager import StateManager
 from copy import deepcopy
-from typing import TypeVar, Generic, Tuple, List
-from itertools import product
+from typing import TypeVar, Generic, List
 from misc import Move
-
-
-PLAYERS = (1, -1)
+from config import App
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(App.config("hex.log_level"))
 
 THexGame = TypeVar("THexGame", bound="HexGame")
+PLAYERS = (1, -1)
 
 
 class HexGame(StateManager):
@@ -30,7 +23,7 @@ class HexGame(StateManager):
 
         # These will be updated in state.setter
         self._is_game_over = None
-        self._legal_moves = set([])
+        self._legal_moves = []
 
         self._shadow_state = self._state_init()
         self.state = state
@@ -59,26 +52,31 @@ class HexGame(StateManager):
     def cnn_state(self):
         return self._cnn_state(False)
 
-    def _cnn_state(self, rotate=False):
-        #cnn_state = np.zeros((self.size + 4, self.size + 4))
-        #cnn_state[:, :2] = cnn_state[:, -2:] = -1
-        #cnn_state[:2, :] = cnn_state[-2:, :] = 1
-        #cnn_state[2:-2, 2:-2] = self.state
+    def _cnn_state(self, rotate=False, five=True):
+        if not five:
+            # TODO: Add bridge patterns, as https://www.idi.ntnu.no/emner/it3105/materials/neural/gao-2017.pdf
+            cnn_state = self.state if not rotate else self.state[::-1, ::-1]
+            player1 = (cnn_state == PLAYERS[0])
+            player2 = (cnn_state == PLAYERS[1])
+            empty = (cnn_state == 0)
 
-        cnn_state = self.state if not rotate else self.state[::-1, ::-1]
-        player1 = (cnn_state == PLAYERS[0])
-        player2 = (cnn_state == PLAYERS[1])
-        empty = (cnn_state == 0)
-
-        if self.current_player == PLAYERS[0]:
-            to_play = [np.ones(cnn_state.shape), np.zeros(cnn_state.shape)]
+            if self.current_player == PLAYERS[1]:
+                new_state = np.array([np.transpose(player2), np.transpose(player1), np.transpose(empty)], dtype=np.float32)
+            else:
+                new_state = np.array([player1, player2, empty], dtype=np.float32)
         else:
-            to_play = [np.zeros(cnn_state.shape), np.ones(cnn_state.shape)]
-
-        # TODO: Add bridge patterns, as https://www.idi.ntnu.no/emner/it3105/materials/neural/gao-2017.pdf
-
-        return np.moveaxis(
-            np.array([player1, player2, empty, *to_play]), 0, 2)
+            cnn_state = self.state
+            new_state = np.array(
+                [
+                    cnn_state == 1,
+                    cnn_state == -1,
+                    cnn_state == 0,
+                    np.ones((7, 7)) * self.current_player == 1,
+                    np.ones((7, 7)) * self.current_player == -1
+                ],
+                dtype=np.float32
+            )
+        return np.moveaxis(new_state, 0, 2)
 
     def _on_state_updated(self):
         self._uf_state_sync()
@@ -133,7 +131,7 @@ class HexGame(StateManager):
     def legal_moves(self):
         if self.is_game_over:
             return []
-        return list(self._legal_moves)
+        return self._legal_moves
 
     @property
     def legal_binary_moves(self):

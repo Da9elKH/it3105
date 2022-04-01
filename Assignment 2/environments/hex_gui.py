@@ -366,6 +366,6 @@ class StateRendering:
                 )
 
 if __name__ == "__main__":
-    env = HexGame(size=4)
+    env = HexGame(size=3)
     gui = HexGUI(environment=env)
     gui.run()

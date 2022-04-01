@@ -65,7 +65,7 @@ cdef class HexGame:
     def cnn_state(self):
         return self._cnn_state(False)
 
-    cpdef np.ndarray _cnn_state(self, bint rotate=False):
+    cdef np.ndarray _cnn_state(self, bint rotate=False):
         cdef tuple size = self.state.shape
         cdef np.ndarray cnn_state = self.state if not rotate else self.state[::-1, ::-1]
         cdef np.ndarray player1 = (cnn_state == PLAYERS[0])
@@ -97,7 +97,7 @@ cdef class HexGame:
         else:
             self.current_player = last_player * (-1)
 
-    cpdef np.ndarray _state_init(self):
+    cdef np.ndarray _state_init(self):
         cdef np.ndarray shadow_state = np.zeros((self.size + 2, self.size + 2), dtype=np.double)
         shadow_state[:, 0] = shadow_state[:, -1] = PLAYERS[1]
         shadow_state[0, :] = shadow_state[-1, :] = PLAYERS[0]
@@ -169,7 +169,7 @@ cdef class HexGame:
     def uf(self) -> UnionFind:
         return self._uf[self.current_player]
 
-    cpdef void _uf_state_sync(self):
+    cdef void _uf_state_sync(self):
         # Sync with current state
         cdef int player = 1
         cdef list location = None
@@ -181,10 +181,10 @@ cdef class HexGame:
     cdef list NEIGHBORS(self, int r, int c):
         return [(r + 1, c - 1), (r, c - 1), (r - 1, c), (r - 1, c + 1), (r, c + 1), (r + 1, c)]
 
-    cpdef list _uf_neighbors(self, tuple location, int size):
+    cdef list _uf_neighbors(self, tuple location, int size):
         return [(i, j) for i, j in self.NEIGHBORS(location[0], location[1]) if 0 <= i <= size + 1 and 0 <= j <= size + 1]
 
-    cpdef void _uf_merge_neighbors(self, tuple location, int player):
+    cdef void _uf_merge_neighbors(self, tuple location, int player):
         # Merge all neighbors
         location = (location[0] + 1, location[1] + 1)
         cdef list neighbors = self._uf_neighbors(location, self.size)
@@ -194,7 +194,7 @@ cdef class HexGame:
             if self._shadow_state[location] == self._shadow_state[neighbor]:
                 self._uf[player].union(location, neighbor)
 
-    cpdef object _uf_init(self):
+    cdef object _uf_init(self):
         # Initiate union-find for both players
         cdef int i = 0
         cdef dict uf = {
@@ -243,7 +243,7 @@ cdef class Node:
     cdef public:
         Node parent
         tuple move
-        list children
+        dict children
         int player
         int N
         int Q
@@ -251,7 +251,7 @@ cdef class Node:
     def __init__(self, Node parent = None, tuple move = None, int player = 1):
         self.parent = parent
         self.move = move
-        self.children = []
+        self.children = {}
         self.player = player
 
         self.N = 0
@@ -262,14 +262,14 @@ cdef class Node:
         cdef double explr = c * sqrt(log(self.parent.N) / (self.N + 1))
         return score + explr
 
-    cpdef void visit(self):
+    cdef void visit(self):
         self.N += 1
 
-    cpdef void update_value(self, int winner):
+    cdef void update_value(self, int winner):
         self.Q += -1 if winner == self.player else 1
 
-    cpdef dict distribution(self):
-        return dict([(child.move, child.N / self.N) for child in self.children])
+    cdef dict distribution(self):
+        return {move: child.N/self.N for move, child in self.children.items()}
 
 
 cdef class MCTS:
@@ -281,11 +281,11 @@ cdef class MCTS:
         double time_budget
         double c
         int rollouts
-        bint verbose      
+        bint verbose
+        bint use_time_budget      
 
-    def __init__(self, HexGame environment, double time_budget = 0.0, int rollouts = 0, double c = 1.0, bint verbose = False):
+    def __init__(self, HexGame environment, bint use_time_budget=False, double time_budget = 0.0, int rollouts = 0, double c = 1.0, bint verbose = False):
         self.environment = environment
-        self._reset_environment = environment.copy()
         self.root = Node(player=self.environment.current_player)
         self.time_budget = time_budget
         self.rollouts = rollouts
@@ -293,15 +293,19 @@ cdef class MCTS:
         self.verbose = verbose
 
     """ POLICIES """
-    cpdef Node _tree_policy(self, list nodes, double c = 1.0):
+    cdef Node _tree_policy(self, list nodes, double c = 1.0):
         cdef Node node = None
-        cdef list move_values = []
+        cdef list values = []
+        cdef int i = 0
+        cdef int leng = len(nodes)
+
+        for i in range(leng):
+            values.append(nodes[i].value(c=c))        
         
-        for node in nodes:
-            move_values.append(node.value(c=c))        
-        
-        cdef int best_node_index = np.argmax(move_values)
-        return nodes[best_node_index]
+        cdef double max_value = max(values)
+        cdef list max_ids = [idx for idx, val in enumerate(values) if val == max_value]
+        i = random.choice(max_ids)
+        return nodes[i]
 
     cpdef tuple _rollout_policy(self, HexGame environment):
         return random.choice(environment.legal_moves)
@@ -315,7 +319,7 @@ cdef class MCTS:
         cdef HexGame environment = None
         cdef int winner = 0
 
-        while time.time() - start_time < self.time_budget or num_rollouts < self.rollouts:
+        while (time.time() - start_time < self.time_budget and self.use_time_budget) or (num_rollouts < self.rollouts and not self.use_time_budget):
             # Select a node to expend
             node, environment = self.selection(c=self.c)
 
@@ -329,19 +333,19 @@ cdef class MCTS:
             self.backup(node, winner)
             num_rollouts += 1
 
-        if self.verbose:
-            print(f"MCTS: Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
+        
+        print(f"MCTS: Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
 
-    cpdef tuple selection(self, double c=1.0):
+    cdef tuple selection(self, double c=1.0):
         """
         Select a single node in the three to perform a simulation from
         """
         cdef Node node = self.root
         cdef HexGame environment = self.environment.copy()
-        cdef list children = node.children
+        cdef dict children = node.children
 
         while len(children) != 0:
-            node = self._tree_policy(children, c=c)
+            node = self._tree_policy(list(children.values()), c=c)
             children = node.children
             environment.play(node.move)
 
@@ -355,14 +359,19 @@ cdef class MCTS:
         if environment.is_game_over:
             return node, environment
 
+        cdef tuple move = None
+        cdef int i = 0
+        cdef int leng = len(environment.legal_moves)
+
         # If the node is not a terminal node
-        for move in environment.legal_moves:
-            node.children.append(Node(node, move, player=environment.next_player))
+        for i in range(leng):
+            move = environment.legal_moves[i]
+            node.children[move] = Node(node, move, player=environment.next_player)
+        
+        move, node = random.choice(list(node.children.items()))
+        environment.play(move)
 
-        cdef Node random_node = random.choice(node.children)
-        environment.play(random_node.move)
-
-        return random_node, environment
+        return node, environment
 
     cdef int rollout(self, HexGame environment):
         """
@@ -404,12 +413,11 @@ cdef class MCTS:
         return dist
 
     def move(self, move: tuple):
-
         # Find or set new root node based on move
-        self.root = next(
-            (child for child in self.root.children if child.move == move),
-            Node(move=move, player=self.environment.next_player)
-        )
+        if move in self.root.children:
+            self.root = self.root.children[move]
+        else:
+            self.root = Node(move=move, player=self.environment.current_player)
 
         # Update the parent to be none.
         self.root.parent = None

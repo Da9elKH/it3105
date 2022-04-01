@@ -1,38 +1,44 @@
+from .node import Node
 from misc import StateManager, Move
 from agents import Agent
-from .node import Node
 import random
 import numpy as np
 import time
 import graphviz
 from typing import List
+from config import App
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(App.config("mcts.log_level"))
 
 
 class MCTS:
-    def __init__(self, environment: StateManager, rollout_policy_agent: Agent, time_budget=0.0, rollouts=0, c=1.0,
-                 epsilon=1.0, verbose=False):
+    def __init__(self, environment: StateManager, rollout_policy_agent: Agent = None, use_time_budget=False, time_budget=0.0, rollouts=0, c=1.0,
+                 epsilon=1.0):
         self.environment = environment
-        self._reset_environment = environment.copy()
         self.root = Node(player=self.environment.current_player)
 
         self._agent = rollout_policy_agent
+
+        self.use_time_budget = use_time_budget
         self.time_budget = time_budget
         self.rollouts = rollouts
+
         self.c = c
         self.epsilon = epsilon
-        self.verbose = verbose
 
     """ POLICIES """
 
     @staticmethod
     def _tree_policy(nodes: List[Node], c=1.0):
-        move_values = [node.value(c=c) for node in nodes]
-        best_node_index = np.argmax(move_values)
-        node = nodes[best_node_index]
-        return node
+        values = [node.value(c=c) for node in nodes]
+        max_value = max(values)
+        max_ids = [idx for idx, val in enumerate(values) if val == max_value]
+        i = random.choice(max_ids)
+        return nodes[i]
 
-    def _rollout_policy(self, environment: StateManager, epsilon=1.0):
-        if random.random() <= epsilon:
+    def _rollout_policy(self, environment: StateManager):
+        if random.random() <= self.epsilon or self._agent is None:
             return random.choice(environment.legal_moves)
         else:
             self._agent.environment = environment
@@ -45,7 +51,7 @@ class MCTS:
         start_time = time.time()
         num_rollouts = 0
 
-        while time.time() - start_time < self.time_budget or num_rollouts < self.rollouts:
+        while (time.time() - start_time < self.time_budget and self.use_time_budget) or (num_rollouts < self.rollouts and not self.use_time_budget):
             # Select a node to expend
             node, environment = self.selection(c=self.c)
 
@@ -59,8 +65,7 @@ class MCTS:
             self.backup(node, winner)
             num_rollouts += 1
 
-        if self.verbose:
-            print(f"MCTS: Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
+        logger.info(f"Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
 
     def selection(self, c=1.0):
         """
@@ -71,7 +76,7 @@ class MCTS:
         children = node.children
 
         while len(children) != 0:
-            node = self._tree_policy(children, c=c)
+            node = self._tree_policy(list(children.values()), c=c)
             children = node.children
             environment.play(node.move)
 
@@ -88,21 +93,20 @@ class MCTS:
 
         # If the node is not a terminal node
         for move in environment.legal_moves:
-            node.children.append(Node(node, move, player=environment.next_player))
+            node.children[move] = Node(node, move, player=environment.next_player)
 
-        random_node = random.choice(node.children)
-        environment.play(random_node.move)
+        move, node = random.choice(list(node.children.items()))
+        environment.play(move)
 
-        return random_node, environment
+        return node, environment
 
     def rollout(self, environment: StateManager):
         """
         Simulate a game based on the rollout policy and return the winning player
         """
 
-        # environment = environment.copy()
         while not environment.is_game_over:
-            action = self._rollout_policy(environment, epsilon=self.epsilon)
+            action = self._rollout_policy(environment)
             environment.play(action)
 
         return environment.current_player
@@ -135,30 +139,35 @@ class MCTS:
         return dist
 
     def move(self, move: Move):
-
         # Find or set new root node based on move
-        self.root = next(
-            (child for child in self.root.children if child.move == move),
-            Node(move=move, player=self.environment.next_player)
-        )
+        if move in self.root.children:
+            self.root = self.root.children[move]
+        else:
+            logger.debug(f"Child node {move} not when moving root")
+            self.root = Node(move=move, player=self.environment.current_player)
 
         # Update the parent to be none.
         self.root.parent = None
 
     def reset(self):
+        logger.debug("Reset MCTS to new node")
         self.root = Node(player=self.environment.current_player)
 
-    def draw(self):
-        g = graphviz.Digraph('G', filename='MCTS.gv')
-        node_count = 0
+    def draw(self, only_visited=True):
+        dot = graphviz.Digraph('G', filename='MCTS.gv')
         queue = [self.root]
+
+        dot.node(str(id(self.root)), "N: %d\nQ: %d\n P:%d" % (self.root.N, self.root.Q, self.root.player))
+
         while queue:
             parent = queue.pop(0)
-            if parent.children:
-                for child in parent.children:
-                    child_info = "%d, %d, %d" % (child.N, child.Q, child.player)
-                    parent_info = "%d, %d, %d" % (parent.N, parent.Q, parent.player)
-                    g.edge(parent_info, child_info, label=str(child.move), id=str(node_count))
-                    node_count += 1
+            if parent.children.values():
+                for child in parent.children.values():
+                    if child.N == 0 and only_visited:
+                        continue
+
+                    dot.node(str(id(child)), "N: %d\nQ: %d\n P:%d" % (child.N, child.Q, child.player))
+                    dot.edge(str(id(parent)), str(id(child)), label=str(child.move))
                     queue.append(child)
-        g.view()
+
+        dot.view()

@@ -1,10 +1,12 @@
-from agents import Agent, ANNAgent, CNNAgent, MCTSAgent
+from agents import Agent, ANNAgent, CNNAgent, MCTSAgent, RandomAgent
+from networks import ANN, CNN
+from mcts import MCTS
 from misc import StateManager
 from environments import HexGame, HexGUI
-from tqdm import tqdm, trange
+from tqdm import trange
 from itertools import permutations
-from networks import ANN, CNN
 from typing import Dict
+from config import App
 
 
 class TOPP:
@@ -34,22 +36,28 @@ class TOPP:
                     self.stats[players[winner]]["W"] += 1
                     self.stats[players[winner*(-1)]]["L"] += 1
 
+        return self.stats
+
     def run_game(self, players: Dict[int, str]):
         self.environment.reset()
         while not self.environment.is_game_over:
-            move, dist = self.agents[players[self.environment.current_player]].get_move(greedy=False)
+            move, dist = self.agents[players[self.environment.current_player]].get_move(greedy=True)
             self.environment.play(move)
         return self.environment.result, self.environment.current_player
 
 
 if __name__ == "__main__":
-    env = HexGame(size=7)
+    env = HexGame(size=App.config("hex.size"))
     topp = TOPP(environment=env)
     gui = HexGUI(environment=env)
 
-    filenames = ["(1) CNN_S7_B5.h5", "(1) CNN_S7_B85.h5"]
+    mcts = MCTS(environment=env, use_time_budget=False, rollouts=1000, rollout_policy_agent=None)
+    agent = MCTSAgent(environment=env, mcts=mcts)
 
-    for filename in filenames:
-        topp.add_agent(filename, CNNAgent(environment=env, network=CNN.from_file(filename)))
+    topp.add_agent("mcts", agent)
+    topp.add_agent("random", RandomAgent(environment=env))
 
-    gui.run_visualization_loop(lambda: topp.tournament(50))
+    if App.config("topp.matches"):
+        gui.run_visualization_loop(lambda: print(topp.tournament(3)))
+    else:
+        print(topp.tournament(10))

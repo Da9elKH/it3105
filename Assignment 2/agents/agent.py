@@ -8,8 +8,8 @@ class Agent(ABC):
     def __init__(self, environment: StateManager = None):
         self.environment = environment
         if self.environment:
-            self.environment.register_reset_hook(self.reset)
-            self.environment.register_move_hook(self.move)
+            self.register_environment_move_hook()
+            self.register_environment_reset_hook()
 
     def get_move(self, greedy=False):
         distribution = self.distribution
@@ -32,3 +32,9 @@ class Agent(ABC):
 
     def move(self, move: Move):
         pass
+
+    def register_environment_reset_hook(self):
+        self.environment.register_reset_hook(self.reset)
+
+    def register_environment_move_hook(self):
+        self.environment.register_move_hook(self.move)

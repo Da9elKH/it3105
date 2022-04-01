@@ -5,7 +5,11 @@ from networks import ANN, CNN
 from memory import Memory
 from tqdm import trange
 from topp import TOPP
+from config import App
 import random
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 class ReinforcementLearning:
     def __init__(self, games):
@@ -49,12 +53,17 @@ class ReinforcementLearning:
             verbose=False
         )
 
-    def run(self, visualize=False):
-        if visualize:
+    def run(self):
+        if App.config("rl.visualize"):
             gui = HexGUI(environment=self.environment)
             gui.run_visualization_loop(lambda: self.train())
         else:
             self.train()
+
+
+    def pre_train(self):
+        pass
+
 
     def train(self):
         # Save model before training
@@ -117,5 +126,87 @@ class ReinforcementLearning:
 
 
 if __name__ == "__main__":
-    rl = ReinforcementLearning(games=200)
-    rl.run()
+    #rl = ReinforcementLearning(games=200)
+    #rl.run()
+
+    def preprocessing():
+        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_mcts/train_samples"
+        states = np.loadtxt(filename + '_states.txt')
+        dists = np.loadtxt(filename + '_dists.txt')
+        transpose_players = (states[:, 0] == -1)
+
+        # State preprocessing
+        flat_states = states[:, 1:].reshape((states.shape[0], 7, 7))
+        flat_states[transpose_players] = np.transpose(flat_states[transpose_players], axes=(0, 2, 1)) * -1
+        flat_states = np.array([flat_states == 1, flat_states == -1, flat_states == 0], dtype=np.float32)
+        flat_states = np.moveaxis(flat_states, 0, 3)
+
+        # Dists preprocessing
+        dists = dists.reshape((dists.shape[0], 7, 7))
+        dists[transpose_players] = np.transpose(dists[transpose_players], axes=(0, 2, 1))
+        dists = dists.reshape((dists.shape[0], 49))
+
+        return flat_states, dists
+
+    def preprocessing_new():
+        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_mcts/train_samples"
+        states = np.loadtxt(filename + '_states.txt')
+        dists = np.loadtxt(filename + '_dists.txt')
+
+        player1 = (states[:, 0] == 1)
+        player2 = (states[:, 0] == -1)
+
+        # State preprocessing
+        flat_states = states[:, 1:].reshape((states.shape[0], 7, 7))
+        #flat_states[transpose_players] = np.transpose(flat_states[transpose_players], axes=(0, 2, 1)) * -1
+        flat_states = np.array([flat_states == 1, flat_states == -1, flat_states == 0, np.zeros((states.shape[0], 7, 7)), np.zeros((states.shape[0], 7, 7))], dtype=np.float32)
+        flat_states = np.moveaxis(flat_states, 0, 3)
+        flat_states[player1, :, :, 3] = 1
+        flat_states[player2, :, :, 4] = 1
+
+        # Dists preprocessing
+        #dists = dists.reshape((dists.shape[0], 7, 7))
+        #dists[transpose_players] = np.transpose(dists[transpose_players], axes=(0, 2, 1))
+        #dists = dists.reshape((dists.shape[0], 49))
+
+        return flat_states, dists
+
+    states, dists = preprocessing_new()
+
+    env = HexGame(size=7)
+    cnn = CNN.build(learning_rate=0.0008, input_shape=env.cnn_state.shape)
+
+    # Plotting
+    train_accuracies = []
+    train_loss = []
+
+    fig = plt.figure(figsize=(12, 5))
+    gs = fig.add_gridspec(1, 2)
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax1.set_title("Accuracy")
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax2.set_title("Loss")
+
+    #for i in range(1000):
+    # Generate sample
+    idx = np.arange(states.shape[0])
+    batch_idx = np.random.choice(idx, 256)
+
+    cnn.train_on_batch(states, dists, None)
+
+    """
+    train_accuracies.append(result["accuracy"])
+    train_loss.append(result["loss"])
+    print(f"Epoch {i}, loss: {result['loss']}, acc: {result['accuracy']}")
+
+    if i % 20 == 0:
+        x = np.arange(len(train_accuracies))
+        ax1.plot(x, train_accuracies, color='tab:green', label="Train")
+        ax2.plot(x, train_loss, color='tab:orange', label="Train")
+        plt.show(block=False)
+        plt.pause(0.001)
+
+    plt.show()
+    """
+
+    cnn.save_model("pretrained_r5000")

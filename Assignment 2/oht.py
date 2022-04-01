@@ -2,21 +2,22 @@ from ActorClient import ActorClient
 from agents import RandomAgent, MCTSAgent, CNNAgent
 from environments import HexGame, HexGUI
 from networks import CNN
+from config import App
 import numpy as np
 
-class OnlineAgent(ActorClient):
+
+class OHT(ActorClient):
     def __init__(self, auth, qualify):
         super().__init__(auth=auth, qualify=qualify)
-
         self.environment = HexGame(size=7)
         self.agent = CNNAgent(environment=self.environment, network=CNN.from_file("....."))
 
-    def run(self, mode='qualifiers', visualize=True):
-        if visualize:
+    def run(self, mode='qualifiers'):
+        if App.config("oht.visualize"):
             gui = HexGUI(environment=self.environment)
-            gui.run_visualization_loop(lambda: super(OnlineAgent, self).run(mode))
+            gui.run_visualization_loop(lambda: super(OHT, self).run(mode))
         else:
-            super(OnlineAgent, self).run(mode)
+            super(OHT, self).run(mode)
 
     def handle_game_start(self, start_player):
         player = {1: 1, 2: -1}
@@ -43,5 +44,5 @@ class OnlineAgent(ActorClient):
 
 
 if __name__ == "__main__":
-    oa = OnlineAgent(auth="e1431af64ca24ffa9f2f3887e6b41a32", qualify=False)
-    oa.run(visualize=True, mode="league")
+    oa = OHT(auth=App.config("oht.auth"), qualify=False)
+    oa.run(mode=App.config("oht.mode"))

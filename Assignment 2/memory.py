@@ -62,7 +62,7 @@ class Memory:
         if self.verbose:
             print(f"MEMORY: Returning {len(states)} samples")
 
-        return players, actions, states, dists, results
+        return list(players), list(actions), list(states), list(dists), list(results)
 
     def all(self):
         players, actions, states, dists, results = zip(*self._lt_memory)

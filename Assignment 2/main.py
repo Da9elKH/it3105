@@ -36,6 +36,3 @@ if __name__ == "__main__":
     defaults()
     setup_logger()
     run()
-
-
-

@@ -6,9 +6,11 @@ from memory import Memory
 from tqdm import trange
 from topp import TOPP
 from config import App
+from sklearn.model_selection import train_test_split
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 
 class ReinforcementLearning:
@@ -129,10 +131,24 @@ if __name__ == "__main__":
     #rl = ReinforcementLearning(games=200)
     #rl.run()
 
+    def ann_preprocessing():
+        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_new2/train_samples"
+        states = np.loadtxt(filename + '_states.txt', dtype=np.int32)
+        dists = np.loadtxt(filename + '_dists.txt', dtype=np.float32)
+
+        dict = {0: 0, 1: 1, -1: 2}
+        bits = lambda s: format(dict[s], f"0{2}b")
+        new_states = np.zeros((states.shape[0], 100))
+
+        for i in range(len(states)):
+            new_states[i] = np.array([float(s) for s in list(''.join([bits(s) for s in states[i]]))])
+
+        return new_states.astype(np.int32), dists
+
     def preprocessing():
-        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_mcts/train_samples"
-        states = np.loadtxt(filename + '_states.txt')
-        dists = np.loadtxt(filename + '_dists.txt')
+        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_new2/train_samples"
+        states = np.loadtxt(filename + '_states.txt', dtype=np.float32)
+        dists = np.loadtxt(filename + '_dists.txt', dtype=np.float32)
         transpose_players = (states[:, 0] == -1)
 
         # State preprocessing
@@ -149,7 +165,7 @@ if __name__ == "__main__":
         return flat_states, dists
 
     def preprocessing_new():
-        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_mcts/train_samples"
+        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_new2/train_samples"
         states = np.loadtxt(filename + '_states.txt')
         dists = np.loadtxt(filename + '_dists.txt')
 
@@ -171,10 +187,34 @@ if __name__ == "__main__":
 
         return flat_states, dists
 
-    states, dists = preprocessing_new()
+
+    transpose = True
+    #states, dists = preprocessing()
+    #states, dists = preprocessing_new()
+    states, dists = ann_preprocessing()
 
     env = HexGame(size=7)
-    cnn = CNN.build(learning_rate=0.0008, input_shape=env.cnn_state.shape)
+    ann = ANN.build(
+        learning_rate=0.001,
+        input_size=len(states[0]),
+        hidden_size=(200, 100, 50),
+        output_size=len(env.legal_binary_moves),
+        activation="relu",
+        optimizer="adam"
+
+    )
+    #cnn = CNN.build(learning_rate=0.0001, input_shape=env.cnn_state.shape)
+
+    # Shuffle the data
+    idx = np.random.permutation(len(states))
+    states = states[idx]
+    dist = dists[idx]
+
+    # Train, test split
+    #X_train, X_test, y_train, y_tes = train_test_split(states, dists, test_size=0.1, shuffle=True)
+
+    #train_dataset = tf.data.Dataset.from_tensor_slices((states, dists)).shuffle(80000).batch(256)
+    #test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_tes)).batch(256)
 
     # Plotting
     train_accuracies = []
@@ -187,26 +227,29 @@ if __name__ == "__main__":
     ax2 = fig.add_subplot(gs[0, 1])
     ax2.set_title("Loss")
 
-    #for i in range(1000):
-    # Generate sample
-    idx = np.arange(states.shape[0])
-    batch_idx = np.random.choice(idx, 256)
+    i = 0
+    for i in range(5000):
+        # Generate sample
+        idx = np.arange(states.shape[0])
+        batch_idx = np.random.choice(idx, 100)
 
-    cnn.train_on_batch(states, dists, None)
+        result = ann.train_on_batch(states[batch_idx], dists[batch_idx], None)
 
-    """
-    train_accuracies.append(result["accuracy"])
-    train_loss.append(result["loss"])
-    print(f"Epoch {i}, loss: {result['loss']}, acc: {result['accuracy']}")
+        train_accuracies.append(result["accuracy"])
+        train_loss.append(result["loss"])
+        print(f"Epoch {i}, loss: {result['loss']}, acc: {result['accuracy']}")
 
-    if i % 20 == 0:
-        x = np.arange(len(train_accuracies))
-        ax1.plot(x, train_accuracies, color='tab:green', label="Train")
-        ax2.plot(x, train_loss, color='tab:orange', label="Train")
-        plt.show(block=False)
-        plt.pause(0.001)
+        i += 1
+
+        if i % 20 == 0:
+            x = np.arange(len(train_accuracies))
+            ax1.plot(x, train_accuracies, color='tab:green', label="Train")
+            ax2.plot(x, train_loss, color='tab:orange', label="Train")
+            plt.show(block=False)
+            plt.pause(0.001)
 
     plt.show()
-    """
+    #cnn.save_model(f"sample_r5000_l{env.cnn_state.shape[2]}_T{transpose}")
 
-    cnn.save_model("pretrained_r5000")
+    import ray
+    ray.wait

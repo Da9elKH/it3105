@@ -14,15 +14,34 @@ MODELS_FOLDER = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/models/
 
 
 class ANN:
-    def __init__(self, model: Model):
+    def __init__(self, model: Model, config=None):
         self.model = model
+        self.config = {} if not config else config
 
     def predict(self, x):
         return self.model(x)
 
     def train_on_batch(self, states, distributions, results):
-        x, y = np.array(states), np.array(distributions)
-        return self.model.train_on_batch(x, y)
+        x = states
+        y = distributions
+
+        if not isinstance(states, np.ndarray):
+            x = np.array(states)
+        if not isinstance(distributions, np.ndarray):
+            y = np.array(distributions)
+
+        return self.model.train_on_batch(x, y, return_dict=True)
+
+    def fit(self, states, distributions):
+        x = states
+        y = distributions
+
+        if not isinstance(states, np.ndarray):
+            x = np.array(states)
+        if not isinstance(distributions, np.ndarray):
+            y = np.array(distributions)
+
+        return self.model.fit(x, y)
 
     @classmethod
     def from_file(cls, filename):
@@ -47,13 +66,14 @@ class ANN:
 
         # Build model
         model = Sequential()
-        model.add(Dense(input_size, activation=act_fn, input_dim=input_size))
-        for v in hidden_size:
-            model.add(Dense(v, activation=act_fn))
-        model.add(Dense(output_size, activation="softmax"))
-        model.compile(optimizer=opt, loss=CategoricalCrossentropy(), metrics=["accuracy", "loss"])
+        model.add(Dense(input_size, activation=act_fn, input_dim=input_size, name="dense_0"))
+        for i, v in enumerate(hidden_size):
+            model.add(Dense(v, activation=act_fn, name=f"dense_{i+1}"))
+        model.add(Dense(output_size, activation="softmax", name=f"dense_{len(hidden_size) + 1}"))
+        model.compile(optimizer=opt, loss=CategoricalCrossentropy(), metrics=["accuracy"])
 
-        return cls(model=model)
+        config = {"lr": learning_rate, "activation": activation, "optimizer": optimizer, "i_size": input_size, "o_size": output_size, "h_layers": hidden_size}
+        return cls(model=model, config=config)
 
     """ MISC """
     def save_model(self, suffix):

@@ -27,6 +27,15 @@ class MCTS:
         self.c = c
         self.epsilon = epsilon
 
+        self.config = {
+            "use_time_budget": use_time_budget,
+            "rollouts": rollouts,
+            "time_budget": time_budget,
+            "c": c,
+            "rp_agent": rollout_policy_agent.__class__.__name__,
+            "epsilon": epsilon
+        }
+
     """ POLICIES """
 
     @staticmethod

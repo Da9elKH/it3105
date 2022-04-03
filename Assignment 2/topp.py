@@ -41,23 +41,24 @@ class TOPP:
     def run_game(self, players: Dict[int, str]):
         self.environment.reset()
         while not self.environment.is_game_over:
-            move, dist = self.agents[players[self.environment.current_player]].get_move(greedy=True)
+            move, dist = self.agents[players[self.environment.current_player]].get_move(greedy=False)
             self.environment.play(move)
         return self.environment.result, self.environment.current_player
 
 
 if __name__ == "__main__":
-    env = HexGame(size=App.config("hex.size"))
-    topp = TOPP(environment=env)
-    gui = HexGUI(environment=env)
 
-    mcts = MCTS(environment=env, use_time_budget=False, rollouts=1000, rollout_policy_agent=None)
-    agent = MCTSAgent(environment=env, mcts=mcts)
+    environment = HexGame(size=4)
+    topp = TOPP(environment=environment)
+    #topp.add_agent("random", RandomAgent(environment=environment))
+    topp.add_agent("ann0", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B0.h5")))
+    #topp.add_agent("ann20", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B20.h5")))
+    #topp.add_agent("ann40", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B40.h5")))
+    #topp.add_agent("ann60", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B60.h5")))
+    topp.add_agent("ann80", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B80.h5")))
 
-    topp.add_agent("mcts", agent)
-    topp.add_agent("random", RandomAgent(environment=env))
-
-    if App.config("topp.matches"):
-        gui.run_visualization_loop(lambda: print(topp.tournament(3)))
+    if App.config("topp.visualize") and False:
+        gui = HexGUI(environment=environment)
+        gui.run_visualization_loop(lambda: print(topp.tournament(25)))
     else:
-        print(topp.tournament(10))
+        print(topp.tournament(500))

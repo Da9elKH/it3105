@@ -46,11 +46,11 @@ class HexGame(StateManager):
 
     @property
     def rotated_cnn_state(self):
-        return self._cnn_state(True)
+        return self._cnn_state(True, True)
 
     @property
     def cnn_state(self):
-        return self._cnn_state(False)
+        return self._cnn_state(False, True)
 
     def _cnn_state(self, rotate=False, five=True):
         if not five:
@@ -77,6 +77,12 @@ class HexGame(StateManager):
                 dtype=np.float32
             )
         return np.moveaxis(new_state, 0, 2)
+
+    @property
+    def ann_state(self):
+        dict = {0: 0, 1: 1, -1: 2}
+        bits = lambda s: format(dict[s], f"0{2}b")
+        return np.array([float(s) for s in list(''.join([bits(s) for s in self.flat_state]))])
 
     def _on_state_updated(self):
         self._uf_state_sync()
@@ -289,7 +295,7 @@ class OldHexGame(StateManager, Generic[THexGame]):
 
     @property
     def flat_state(self):
-        bits = lambda s: format(s, f"0{2}b")
+        bits = lambda s: format(s if s == 1 else 2, f"0{2}b")
         state = [self.current_player, *self.state.flatten()]
         return np.array([float(s) for s in list(''.join([bits(s) for s in state]))])
 

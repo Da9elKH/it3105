@@ -5,16 +5,25 @@ from memory import Memory
 from environments import HexGame
 from mcts import MCTS
 
-
 @ray.remote
 class Worker:
     def __init__(self):
+        # Cython implementation of board
+        import pyximport
+        pyximport.install(
+            language_level=3,
+            setup_args={
+                "include_dirs": [np.get_include()],
+                "define_macros": [('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')]
+            }
+        )
+        from rust_hex import modules
 
         self.memory = Memory(queue_size=1000, sample_size=1)
-        self.environment = HexGame(size=7)
+        self.environment = modules.HexGame(size=7)
         self.agent = MCTSAgent(
             environment=self.environment,
-            mcts=MCTS(
+            mcts=modules.MCTS(
                 environment=self.environment,
                 use_time_budget=False,
                 rollouts=1000,

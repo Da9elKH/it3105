@@ -1,5 +1,5 @@
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense, Conv2D, BatchNormalization, Flatten, Input, add, ReLU, Softmax
+from tensorflow.keras.layers import Dense, Conv2D, BatchNormalization, Flatten, Input, add, ReLU, Softmax, ZeroPadding2D
 from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.models import load_model
@@ -48,7 +48,7 @@ class CNN:
     def build(cls, learning_rate: float, input_shape: tuple):
         """ Initialize the NN with the given depth and width for the problem environment """
         model = Sequential()
-        model.add(Input(shape=(7, 7, 5)))
+        model.add(Input(shape=input_shape))
 
         # Convolutional layers
         for _ in range(4):
@@ -58,10 +58,12 @@ class CNN:
         # Policy layer
         model.add(Conv2D(filters=1, kernel_size=(1, 1), padding='same', data_format="channels_last"))
         model.add(Flatten())
-        model.add(Dense(49))
+        #model.add(Dense(49))
         model.add(Softmax())
 
         model.compile(loss=CategoricalCrossentropy(), optimizer=Adam(learning_rate=learning_rate), metrics=["accuracy"])
+
+        print(model.summary())
 
         return cls(model=model)
 

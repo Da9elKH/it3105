@@ -48,14 +48,16 @@ class TOPP:
 
 if __name__ == "__main__":
 
-    environment = HexGame(size=4)
+    environment = HexGame(size=7)
     topp = TOPP(environment=environment)
     #topp.add_agent("random", RandomAgent(environment=environment))
-    topp.add_agent("ann0", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B0.h5")))
-    #topp.add_agent("ann20", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B20.h5")))
-    #topp.add_agent("ann40", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B40.h5")))
-    #topp.add_agent("ann60", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B60.h5")))
-    topp.add_agent("ann80", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B80.h5")))
+    # topp.add_agent("ann20", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B20.h5")))
+    # topp.add_agent("ann40", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B40.h5")))
+    # topp.add_agent("ann60", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B60.h5")))
+    topp.add_agent("ann40697", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S7_B40697.h5")))
+    topp.add_agent("ann51356", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S7_B51356.h5")))
+    topp.add_agent("ann22900", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S7_B22900.h5")))
+
 
     if App.config("topp.visualize") and False:
         gui = HexGUI(environment=environment)

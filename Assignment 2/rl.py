@@ -189,11 +189,12 @@ if __name__ == "__main__":
 
 
     transpose = True
-    #states, dists = preprocessing()
+    states, dists = preprocessing()
     #states, dists = preprocessing_new()
-    states, dists = ann_preprocessing()
+    #states, dists = ann_preprocessing()
 
     env = HexGame(size=7)
+    """
     ann = ANN.build(
         learning_rate=0.001,
         input_size=len(states[0]),
@@ -203,7 +204,8 @@ if __name__ == "__main__":
         optimizer="adam"
 
     )
-    #cnn = CNN.build(learning_rate=0.0001, input_shape=env.cnn_state.shape)
+    """
+    cnn = CNN.build(learning_rate=0.01, input_shape=env.cnn_state.shape, output_size=len(env.legal_binary_moves))
 
     # Shuffle the data
     idx = np.random.permutation(len(states))
@@ -228,16 +230,20 @@ if __name__ == "__main__":
     ax2.set_title("Loss")
 
     i = 0
-    for i in range(5000):
+    for i in range(500):
         # Generate sample
         idx = np.arange(states.shape[0])
-        batch_idx = np.random.choice(idx, 100)
+        batch_idx = np.random.choice(idx, 500, replace=False)
 
-        result = ann.train_on_batch(states[batch_idx], dists[batch_idx], None)
+        result = cnn.fit(states[batch_idx], dists[batch_idx], epochs=10, batch_size=500)
+        #result = cnn.train_on_batch(states[batch_idx], dists[batch_idx], None)
 
-        train_accuracies.append(result["accuracy"])
-        train_loss.append(result["loss"])
-        print(f"Epoch {i}, loss: {result['loss']}, acc: {result['accuracy']}")
+        loss = result.history["loss"][9]
+        acc = result.history["accuracy"][9]
+
+        train_accuracies.append(acc)
+        train_loss.append(loss)
+        print(f"Epoch {i}, loss: {loss}, acc: {acc}")
 
         i += 1
 
@@ -250,6 +256,3 @@ if __name__ == "__main__":
 
     plt.show()
     #cnn.save_model(f"sample_r5000_l{env.cnn_state.shape[2]}_T{transpose}")
-
-    import ray
-    ray.wait

@@ -34,8 +34,8 @@ class CNN:
 
         return self.model.train_on_batch(x, y, return_dict=True)
 
-    def fit(self, x, y):
-        self.model.fit(x, y, batch_size=256, epochs=50)#, callbacks=[WandbCallback()])
+    def fit(self, x, y, **params):
+        return self.model.fit(x, y, **params)#, callbacks=[WandbCallback()])
 
 
     @classmethod
@@ -45,25 +45,28 @@ class CNN:
         return cls(model=model)
 
     @classmethod
-    def build(cls, learning_rate: float, input_shape: tuple):
+    def build(cls, learning_rate: float, input_shape: tuple, output_size: int):
         """ Initialize the NN with the given depth and width for the problem environment """
         model = Sequential()
         model.add(Input(shape=input_shape))
 
+        model.add(Conv2D(filters=32, kernel_size=(5, 5), padding='same', data_format="channels_last"))
+        model.add(BatchNormalization(axis=1))
+        model.add(ReLU())
+
         # Convolutional layers
-        for _ in range(4):
+        for _ in range(7):
             model.add(Conv2D(filters=32, kernel_size=(3, 3), padding='same', data_format="channels_last"))
+            model.add(BatchNormalization(axis=1))
             model.add(ReLU())
 
         # Policy layer
         model.add(Conv2D(filters=1, kernel_size=(1, 1), padding='same', data_format="channels_last"))
         model.add(Flatten())
-        #model.add(Dense(49))
-        model.add(Softmax())
+        model.add(Dense(output_size, activation="softmax"))
+        #model.add(Softmax())
 
         model.compile(loss=CategoricalCrossentropy(), optimizer=Adam(learning_rate=learning_rate), metrics=["accuracy"])
-
-        print(model.summary())
 
         return cls(model=model)
 

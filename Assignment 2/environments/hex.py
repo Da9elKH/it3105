@@ -46,15 +46,16 @@ class HexGame(StateManager):
 
     @property
     def rotated_cnn_state(self):
-        return self._cnn_state(True, True)
+        return self._cnn_state(True, False)
 
     @property
     def cnn_state(self):
-        return self._cnn_state(False, True)
+        return self._cnn_state(False, False)
 
     def _cnn_state(self, rotate=False, five=True):
         if not five:
-            # TODO: Add bridge patterns, as https://www.idi.ntnu.no/emner/it3105/materials/neural/gao-2017.pdf
+            # TODO: Add bridge patterns (?), as https://www.idi.ntnu.no/emner/it3105/materials/neural/gao-2017.pdf
+
             cnn_state = self.state if not rotate else self.state[::-1, ::-1]
             player1 = (cnn_state == PLAYERS[0])
             player2 = (cnn_state == PLAYERS[1])
@@ -64,6 +65,7 @@ class HexGame(StateManager):
                 new_state = np.array([np.transpose(player2), np.transpose(player1), np.transpose(empty)], dtype=np.float32)
             else:
                 new_state = np.array([player1, player2, empty], dtype=np.float32)
+            return np.moveaxis(new_state, 0, 2)
         else:
             cnn_state = self.state
             new_state = np.array(
@@ -76,7 +78,7 @@ class HexGame(StateManager):
                 ],
                 dtype=np.float32
             )
-        return np.moveaxis(new_state, 0, 2)
+            return np.moveaxis(new_state, 0, 2)
 
     @property
     def ann_state(self):

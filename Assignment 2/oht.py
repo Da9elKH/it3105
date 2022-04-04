@@ -1,7 +1,7 @@
 from ActorClient import ActorClient
-from agents import RandomAgent, MCTSAgent, CNNAgent
+from agents import RandomAgent, MCTSAgent, CNNAgent, ANNAgent
 from environments import HexGame, HexGUI
-from networks import CNN
+from networks import CNN, ANN
 from config import App
 import numpy as np
 
@@ -10,7 +10,7 @@ class OHT(ActorClient):
     def __init__(self, auth, qualify):
         super().__init__(auth=auth, qualify=qualify)
         self.environment = HexGame(size=7)
-        self.agent = CNNAgent(environment=self.environment, network=CNN.from_file("....."))
+        self.agent = ANNAgent(environment=self.environment, network=ANN.from_file("(1) ANN_S7_B40697.h5"))
 
     def run(self, mode='qualifiers'):
         if App.config("oht.visualize"):

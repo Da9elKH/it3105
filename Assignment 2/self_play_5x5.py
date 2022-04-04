@@ -1,193 +1,255 @@
 import ray
+ray.init()
+
+import wandb
+import time
 import numpy as np
-from agents import MCTSAgent
-from memory import Memory
+import random
 from environments import HexGame
+from networks import ANN
 from mcts import MCTS
-from networks import CNN
+from agents import MCTSAgent, ANNAgent
+from misc import LiteModel
+from tensorflow.keras import Sequential
+from config import App
+
+
+class GameHistory:
+    def __init__(self):
+        self.result = 0
+        self.players = []
+        self.states = []
+        self.distributions = []
+        self.moves = []
+
+    def register_result(self, result):
+        self.result = result
+
+    def register_move(self, player, move, state, distribution):
+        self.players.append(player)
+        self.states.append(state)
+        self.moves.append(move)
+        self.distributions.append(distribution)
+
+    def stack(self):
+        memory = []
+        for i in range(len(self.states)):
+            player = self.players[i]
+            move = self.moves[i]
+            state = self.states[i]
+            distribution = self.distributions[i]
+            result = self.result
+            memory.append([player, move, state, distribution, result])
+        return memory
 
 
 @ray.remote
-class MCTSWorker:
+class Storage:
     def __init__(self):
-        self.memory = Memory(queue_size=1000, sample_size=1)
-        self.environment = HexGame(size=7)
-        self.agent = MCTSAgent(
-            environment=self.environment,
-            mcts=MCTS(
-                environment=self.environment,
-                use_time_budget=False,
-                rollouts=1000,
-                c=1.4,
-            )
-        )
+        self.data = {"terminate": False, "checkpoint": -1, "num_played_steps": 0, "epsilon": App.config("mcts.epsilon")}
 
-    def sample_train(self):
-        self.environment.reset()
-        self.memory.reset()
-        return self.run()
+    def get_info(self, key):
+        return self.data[key]
 
-    def run(self):
-        while not self.environment.is_game_over:
-            # Run MCTS
-            best_move, distribution = self.agent.get_move(greedy=False)
+    def set_info(self, key, value):
+        self.data[key] = value
 
-            # Add state and distribution to memory
-            self.memory.register("player", self.environment.current_player)
-            self.memory.register("action", best_move)
-            self.memory.register("state", self.environment.flat_state)
-            self.memory.register("distribution", distribution.flatten().tolist())
+    def all(self):
+        return self.data
 
-            # Play the move
-            self.environment.play(best_move)
 
-        # Register result of game in memory
-        self.memory.register_result(self.environment.result)
+@ray.remote
+class Buffer:
+    def __init__(self):
+        self.buffer = {}
+        self.test_buffer = {}
 
-        return self.memory.all()
+        self.num_games = 0
+        self.num_samples = 0
+        self.num_played_steps = 0
+
+        self.num_tests = 0
+
+    def store(self, game_history, storage):  # Game history
+        if random.random() > 0.1:
+            self.buffer[self.num_games] = game_history
+            self.num_games += 1
+            self.num_samples += len(game_history.states)
+            self.num_played_steps += len(game_history.states)
+            storage.set_info.remote("num_played_steps", self.num_played_steps)
+        else:
+            self.test_buffer[self.num_games] = game_history
+            self.num_tests += 1
+
+    def get_batch(self, sample_size, test=False):
+        if test:
+            keys = np.random.choice(list(self.test_buffer.keys()), size=min(sample_size, len(self.test_buffer)), replace=False)
+            returns = [self.test_buffer[key] for key in keys]
+        else:
+            keys = np.random.choice(list(self.buffer.keys()), size=min(sample_size, len(self.buffer)), replace=False)
+            returns = [self.buffer[key] for key in keys]
+        return returns
+
+    def get_num_samples(self):
+        return self.num_samples
+
+    def get_num_games(self):
+        return self.num_games
+
+    def get_num_tests(self):
+        return self.num_tests
 
 
 @ray.remote
 class Trainer:
-    def __init__(self):
-        self.network = CNN.build(learning_rate=0.003)
+    def __init__(self, network):
+        self.network = network
+        self.initialized = False
+        self.training_step = 0
 
+        wandb.login()
+        wandb.init(project="hex")
 
-if __name__ == "__main__" and False:
-    ray.init(num_cpus=3)
+    def loop(self, storage, buffer):
+        if not self.initialized:
+            self.initialize_ann(storage)
 
-    players = []
-    actions = []
-    states = []
-    dists = []
-    results = []
+        while not ray.get(storage.get_info.remote("terminate")):
+            num_samples = ray.get(buffer.get_num_samples.remote())
+            num_games = ray.get(buffer.get_num_games.remote())
+            num_tests = ray.get(buffer.get_num_tests.remote())
 
-    # Initialize workers
-    workers = [MCTSWorker.options(num_cpus=1).remote() for i in range(3)]
+            if num_samples > 0 and num_tests > 0:
 
-    while True:
-        # Run workers async
-        tasks = [worker.sample_train.remote() for worker in workers]
+                train = ray.get(buffer.get_batch.remote(50, test=False))
+                test = ray.get(buffer.get_batch.remote(50, test=True))
 
-        # Await samples
-        samples = ray.get(tasks)
+                train_x, test_x = np.array(train[0].states), np.array(test[0].states)
+                train_y, test_y = np.array(train[0].distributions), np.array(test[0].distributions)
 
-        for sample in samples:
-            players.extend(sample[0])
-            actions.extend(sample[1])
-            states.extend(sample[2])
-            dists.extend(sample[3])
-            results.extend(sample[4])
+                for i in range(1, len(train)):
+                    train_x = np.append(train_x, train[i].states, 0)
+                    train_y = np.append(train_y, train[i].distributions, 0)
 
-        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/train_samples"
-        np.savetxt(filename + '_players.txt', players)
-        np.savetxt(filename + '_actions.txt', actions)
-        np.savetxt(filename + '_states.txt', states)
-        np.savetxt(filename + '_dists.txt', dists)
-        np.savetxt(filename + '_results.txt', results)
+                for i in range(1, len(test)):
+                    test_x = np.append(test_x, test[i].states, 0)
+                    test_y = np.append(test_y, test[i].distributions, 0)
 
-        print(f"Saved {len(players)} samples to file")
+                train_results = self.network.train_on_batch(train_x.astype(np.float32), train_y.astype(np.float32), None)
+                test_results = self.network.model.evaluate(test_x.astype(np.float32), test_y.astype(np.float32), batch_size=len(test))
+
+                epsilon = ray.get(storage.get_info.remote("epsilon"))
+
+                wandb.log({
+                    "accuracy": train_results["accuracy"],
+                    "loss": train_results["loss"],
+                    "test_accuracy": test_results[1],
+                    "test_loss": test_results[0],
+                    "samples": num_samples,
+                    "games": num_games,
+                    "tests": num_tests,
+                    "training_step": self.training_step,
+                    "epsilon": epsilon
+                })
+
+                weights = self.network.model.get_weights()
+                storage.set_info.remote("nn_weights", weights)
+                storage.set_info.remote("checkpoint", random.getrandbits(64))
+
+                self.training_step += 1
+
+                if self.training_step % 5 == 0:
+                    storage.set_info.remote("epsilon", max(0.05, epsilon*0.99))
+                    self.save(num_samples)
+
+                while ray.get(storage.get_info.remote("get_num_games"))/max(1, self.training_step) < 5:
+                    time.sleep(0.5)
+            else:
+                time.sleep(2)
+
+    def save(self, num_samples):
+        model_name = f"S{4}_B{num_samples}"
+        self.network.save_model(model_name)
+
+    def initialize_ann(self, storage):
+        weights = self.network.model.get_weights()
+        config = self.network.model.get_config()
+        storage.set_info.remote("nn_weights", weights)
+        storage.set_info.remote("nn_config", config)
+        storage.set_info.remote("checkpoint", random.getrandbits(64))
+        self.initialized = True
+        self.save(0)
+
+@ray.remote
+class MCTSWorker:
+    def __init__(self, size, model):
+        self.initialized = False
+        self.environment = HexGame(size=App.config("hex.size"))
+        self.model = LiteModel.from_keras_model(model)
+        self.network = ANN(model=self.model)
+        self.ann_agent = ANNAgent(environment=self.environment, network=self.network)
+        self.mcts = MCTS(
+            environment=self.environment,
+            rollout_policy_agent=self.ann_agent,
+            use_time_budget=App.config("mcts.use_time_budget"),
+            rollouts=App.config("mcts.searches"),
+            c=App.config("mcts.c"),
+            epsilon=App.config("mcts.epsilon")
+        )
+        self.agent = MCTSAgent(environment=self.environment, mcts=self.mcts)
+        self.checkpoint = None
+
+    def updates_model_and_hyper_params(self, storage, checkpoint):
+        if checkpoint != self.checkpoint:
+            weights = ray.get(storage.get_info.remote("nn_weights"))
+            config = ray.get(storage.get_info.remote("nn_config"))
+            epsilon = ray.get(storage.set_info.remote("epsilon"))
+
+            seq_model = Sequential.from_config(config)
+            seq_model.set_weights(weights)
+
+            self.model.update_keras_model(seq_model)
+            self.checkpoint = checkpoint
+            self.mcts.epsilon = epsilon
+
+    def loop(self, storage, buffer):
+        while not ray.get(storage.get_info.remote("terminate")):
+            checkpoint = ray.get(storage.get_info.remote("checkpoint"))
+
+            if checkpoint == -1:
+                time.sleep(1)
+            else:
+                self.updates_model_and_hyper_params(storage, checkpoint)
+                self.environment.reset()
+                gh = GameHistory()
+                while not self.environment.is_game_over:
+                    move, distribution = self.agent.get_move(greedy=False)
+                    gh.register_move(self.environment.current_player, move, self.environment.ann_state, distribution)
+                    self.environment.play(move)
+                buffer.store.remote(gh, storage)
+
 
 if __name__ == "__main__":
+    env = HexGame(size=App.config("hex.size"))
+    network = ANN.build(
+        input_size=len(env.ann_state),
+        output_size=len(env.legal_binary_moves),
+        learning_rate=App.config("ann.learning_rate"),
+        activation=App.config("ann.activation"),
+        optimizer=App.config("ann.optimizer"),
+        hidden_size=App.config("ann.hidden_layers")
+    )
 
-    import ray
-    ray.init()
-
-    import numpy as np
-    import time
-    import random
-
-    @ray.remote
-    class Storage:
-        def __init__(self):
-            self.checkpoint = {}
-            self.calculations = {}
-
-        def get_info(self, key):
-            return self.checkpoint[key]
-
-        def set_info(self, key, value):
-            self.checkpoint[key] = value
-
-        def all_calculations(self):
-            return self.calculations
-
-        def update_calculations(self, data):
-            self.calculations.update(data)
-
-        def add_calculation(self, data):
-            key = random.getrandbits(64)
-            self.calculations.update({key: {"finished": False, "data": data}})
-            return key
-
-        def get_calculation(self, key):
-            if self._calculation_finished(key):
-                return self.calculations[key]["data"]
-            else:
-                return None
-
-        def _calculation_finished(self, key):
-            if key in self.calculations:
-                return self.calculations[key]["finished"]
-            else:
-                return False
-
-        def all(self):
-            return self.checkpoint
-
-    @ray.remote
-    class Predictor:
-        def __init__(self):
-            self.waiting_storage = {}
-            self.finished_storage = {}
-            self.BATCH_SIZE = 2
-
-        def calculate(self, storage):
-            waiting_storage = ray.get(storage.all_calculations.remote())
-
-            if len(waiting_storage) > 0:
-                # Unzip all values
-                values = []
-                keys = []
-                for k, v in waiting_storage.items():
-                    keys.append(k)
-                    values.append(v["data"])
-
-                # Calculation
-                values = list((np.array(values) ** 2).flatten())
-
-                # Store finished storage
-                results = {}
-                for i in range(len(values)):
-                    results[keys[i]] = {"finished": True, "data": values[i]}
-                storage.update_calculations.remote(results)
-
-        def loop(self, storage):
-            while True:
-                time.sleep(0.05)
-                self.calculate(storage)
-
-        def all(self):
-            return self.waiting_storage
-
-    @ray.remote
-    class MCTSWorker:
-        def loop(self, storage):
-            while True:
-                number = random.randint(1, 100)
-                key = storage.add_calculation.remote(number)
-                while not (result := ray.get(storage.get_calculation.remote(key))):
-                    time.sleep(0.05)
-                storage.set_info.remote(number, result)
-
-
+    buffer = Buffer.remote()
     storage = Storage.remote()
-    predictor = Predictor.remote()
-    mcts_workers = [MCTSWorker.remote() for _ in range(100)]
+    trainer = Trainer.remote(network)
+    workers = [MCTSWorker.remote(env.size, network.model) for _ in range(1)]
 
-    [worker.loop.remote(storage) for worker in mcts_workers]
-    predictor.loop.remote(storage)
+    # Run loops
+    trainer.loop.remote(storage, buffer)
+    for worker in workers:
+        worker.loop.remote(storage, buffer)
 
     while True:
-        print(len(ray.get(storage.all.remote())))
-        time.sleep(0.5)
+        time.sleep(10)
+        print(f"Num samples: {ray.get(buffer.num_samples.remote())}")

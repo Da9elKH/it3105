@@ -8,6 +8,7 @@ from tensorflow.keras.activations import get as activation_get
 from tensorflow.keras.optimizers import get as optimizer_get
 from typing import Tuple
 from os import path
+from misc import LiteModel
 import numpy as np
 
 MODELS_FOLDER = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/models/"
@@ -19,7 +20,13 @@ class ANN:
         self.config = {} if not config else config
 
     def predict(self, x):
-        return self.model(x)
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
+
+        if isinstance(self.model, LiteModel):
+            return self.model.predict_single(x)
+        else:
+            return self.model(x)
 
     def train_on_batch(self, states, distributions, results):
         x = states

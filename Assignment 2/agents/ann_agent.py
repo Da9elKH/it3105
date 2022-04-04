@@ -1,6 +1,6 @@
 from agents import Agent
 from networks import ANN
-from misc.state_manager import StateManager
+from misc import StateManager, LiteModel
 import numpy as np
 
 
@@ -11,7 +11,11 @@ class ANNAgent(Agent):
 
     @property
     def distribution(self):
-        dist = self.network.predict(np.array([self.environment.ann_state]))[0].numpy()
+        if isinstance(self.network.model, LiteModel):
+            dist = self.network.predict(self.environment.ann_state)
+        else:
+            dist = self.network.predict(np.array([self.environment.ann_state]))[0].numpy()
+
         dist = dist * self.environment.legal_binary_moves
         dist = dist / sum(dist)
         return dist

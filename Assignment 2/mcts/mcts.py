@@ -74,7 +74,7 @@ class MCTS:
             self.backup(node, winner)
             num_rollouts += 1
 
-        logger.info(f"Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
+        logger.debug(f"Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
 
     def selection(self, c=1.0):
         """

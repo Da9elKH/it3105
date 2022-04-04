@@ -9,6 +9,7 @@ from tensorflow.keras.optimizers import get as optimizer_get
 from typing import Tuple
 from os import path
 from misc import LiteModel
+from config import App
 import numpy as np
 
 MODELS_FOLDER = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/models/"
@@ -28,14 +29,11 @@ class ANN:
         else:
             return self.model(x)
 
-    def train_on_batch(self, states, distributions, results):
-        x = states
-        y = distributions
-
-        if not isinstance(states, np.ndarray):
-            x = np.array(states)
-        if not isinstance(distributions, np.ndarray):
-            y = np.array(distributions)
+    def train_on_batch(self, x, y):
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
+        if not isinstance(y, np.ndarray):
+            y = np.array(y)
 
         return self.model.train_on_batch(x, y, return_dict=True)
 
@@ -55,6 +53,11 @@ class ANN:
         """ Returns a network instance from file """
         model = load_model(MODELS_FOLDER + filename)
         return cls(model=model)
+
+    @classmethod
+    def build_from_config(cls, input_size: int, output_size: int, **params):
+        config = {"input_size": input_size, "output_size": output_size, **App.config("ann"), **params}
+        return cls(**config)
 
     @classmethod
     def build(cls, input_size: int, hidden_size: Tuple[int, ...], output_size: int, learning_rate: float, activation: str, optimizer: str):

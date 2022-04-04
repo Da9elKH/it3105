@@ -143,7 +143,8 @@ class MCTS:
             dist[index] = v
 
         # Normalize the distribution
-        dist /= sum(dist)
+        # dist /= sum(dist)
+        # MOVED TO MCTS-AGENT
 
         return dist
 

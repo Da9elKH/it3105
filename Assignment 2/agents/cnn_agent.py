@@ -1,6 +1,7 @@
 from .agent import Agent
-from misc.state_manager import StateManager
+from misc import StateManager, LiteModel
 from networks.cnn import CNN
+from config import App
 import numpy as np
 
 
@@ -8,29 +9,30 @@ class CNNAgent(Agent):
     def __init__(self, environment: StateManager = None, network: CNN = None):
         super(CNNAgent, self).__init__(environment)
         self.network = network
-        self._value = None
+        self.T = App.config("cnn.temperature")
 
     @property
     def distribution(self):
-        policy, value = self.network.predict(np.array([self.environment.cnn_state]))
-        self._value = value
+        if isinstance(self.network.model, LiteModel):
+            policy = self.network.predict(self.environment.cnn_state)
+        else:
+            policy = self.network.predict(np.array([self.environment.cnn_state])).numpy()
 
         if self.environment.current_player == -1:
-            dist = policy.numpy().reshape(self.environment.state.shape).T.flatten()
+            dist = policy.reshape(self.environment.state.shape).T.flatten()
         else:
-            dist = policy.numpy().flatten()
+            dist = policy.flatten()
 
         dist = dist * self.environment.legal_binary_moves
 
-        # dist = dist**(1/T) ()
+        # If we want to have a factor for maxing distribution
+        # dist = dist**(1/T)
 
-        dist = dist / sum(dist)
+        dist = dist**(1/self.T) / sum(dist**(1/self.T))
         return dist
 
-    @property
-    def value(self):
-        raise ValueError("NOT IMPLEMENTED")
-        if self._value:
-            return self._value
+    def state_fc(self, environment, rotate=False):
+        if rotate:
+            return environment.rotated_cnn_state
         else:
-            return self.network.predict(np.array([self.environment.cnn_state]))[1]
+            return environment.cnn_state

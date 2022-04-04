@@ -2,6 +2,7 @@ from .agent import Agent
 from .random_agent import RandomAgent
 from misc.state_manager import StateManager
 from mcts.mcts import MCTS
+from config import App
 
 
 class MCTSAgent(Agent):
@@ -18,6 +19,7 @@ class MCTSAgent(Agent):
                 **mcts_params
             }
         )
+        self.T = App.config("mcts.temperature")
         super().__init__(environment)
 
     def get_move(self, greedy=False):
@@ -26,7 +28,9 @@ class MCTSAgent(Agent):
 
     @property
     def distribution(self):
-        return self.mcts.distribution
+        dist = self.mcts.distribution
+        dist = dist ** (1 / self.T) / sum(dist ** (1 / self.T))
+        return dist
 
     def register_environment_move_hook(self):
         self.environment.register_move_hook(self.mcts.move)

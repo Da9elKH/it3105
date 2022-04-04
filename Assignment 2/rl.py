@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
     )
     """
-    cnn = CNN.build(learning_rate=0.01, input_shape=env.cnn_state.shape, output_size=len(env.legal_binary_moves))
+    cnn = CNN.build_from_config(input_shape=env.cnn_state.shape, output_size=len(env.legal_binary_moves))
 
     # Shuffle the data
     idx = np.random.permutation(len(states))

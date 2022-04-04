@@ -5,10 +5,11 @@ import wandb
 import time
 import numpy as np
 import random
+from collections import deque
 from environments import HexGame
-from networks import ANN
+from networks import ANN, CNN
 from mcts import MCTS
-from agents import MCTSAgent, ANNAgent
+from agents import MCTSAgent, ANNAgent, CNNAgent
 from misc import LiteModel
 from tensorflow.keras import Sequential
 from config import App
@@ -61,33 +62,37 @@ class Storage:
 @ray.remote
 class Buffer:
     def __init__(self):
-        self.buffer = {}
-        self.test_buffer = {}
+        self.buffer_train = deque([], maxlen=App.config("rbuf.queue_size"))
+        self.buffer_test = deque([], maxlen=App.config("rbuf.queue_size"))
 
         self.num_games = 0
         self.num_samples = 0
         self.num_played_steps = 0
-
         self.num_tests = 0
 
     def store(self, game_history, storage):  # Game history
-        if random.random() > 0.05:
-            self.buffer[self.num_games] = game_history
+        if random.random() > 0.05 and self.num_tests != 0:
+            self.buffer.append(game_history)
             self.num_games += 1
-            self.num_samples += len(game_history.states)
+            self.num_samples = len(self.buffer_train)
             self.num_played_steps += len(game_history.states)
             storage.set_info.remote("num_games", self.num_games)
         else:
-            self.test_buffer[self.num_games] = game_history
+            self.test_buffer.append(game_history)
             self.num_tests += 1
 
     def get_batch(self, sample_size, test=False):
         if test:
-            keys = np.random.choice(list(self.test_buffer.keys()), size=min(sample_size, len(self.test_buffer)), replace=False)
-            returns = [self.test_buffer[key] for key in keys]
+            returns = np.random.choice(self.buffer_test, size=min(sample_size, len(self.buffer_test)), replace=False)
         else:
-            keys = np.random.choice(list(self.buffer.keys()), size=min(sample_size, len(self.buffer)), replace=False)
-            returns = [self.buffer[key] for key in keys]
+            returns = np.random.choice(self.buffer_train, size=min(sample_size, len(self.buffer_train)), replace=False)
+        return returns
+
+    def get_all(self, test=False):
+        if test:
+            returns = list(self.buffer_test)
+        else:
+            returns = list(self.buffer_train)
         return returns
 
     def get_num_samples(self):
@@ -121,8 +126,10 @@ class Trainer:
 
             if num_games > 1 and num_tests > 1:
 
-                train = ray.get(buffer.get_batch.remote(num_games//2, test=False))
-                test = ray.get(buffer.get_batch.remote(num_tests//2, test=True))
+                #train = ray.get(buffer.get_batch.remote(num_games//2, test=False))
+                #test = ray.get(buffer.get_batch.remote(num_tests//2, test=True))
+                train = ray.get(buffer.get_all.remote(test=False))
+                test = ray.get(buffer.get_all.remote(test=True))
 
                 train_x, test_x = np.array(train[0].states), np.array(test[0].states)
                 train_y, test_y = np.array(train[0].distributions), np.array(test[0].distributions)
@@ -135,14 +142,15 @@ class Trainer:
                     test_x = np.append(test_x, test[i].states, 0)
                     test_y = np.append(test_y, test[i].distributions, 0)
 
-                train_results = self.network.train_on_batch(train_x.astype(np.float32), train_y.astype(np.float32), None)
+                #train_results = self.network.train_on_batch(train_x.astype(np.float32), train_y.astype(np.float32), None)
+                train_results = self.network.fit(train_x.astype(np.float32), train_y.astype(np.float32), batch_size=len(train_x), epochs=10)
                 test_results = self.network.model.evaluate(test_x.astype(np.float32), test_y.astype(np.float32), batch_size=len(test))
 
                 epsilon = ray.get(storage.get_info.remote("epsilon"))
 
                 wandb.log({
-                    "accuracy": train_results["accuracy"],
-                    "loss": train_results["loss"],
+                    "accuracy": train_results.history["accuracy"][9],
+                    "loss": train_results.history["loss"][9],
                     "test_accuracy": test_results[1],
                     "test_loss": test_results[0],
                     "samples": num_samples,
@@ -186,11 +194,18 @@ class MCTSWorker:
         self.initialized = False
         self.environment = HexGame(size=App.config("hex.size"))
         self.model = LiteModel.from_keras_model(model)
-        self.network = ANN(model=self.model)
-        self.ann_agent = ANNAgent(environment=self.environment, network=self.network)
+
+        if App.config("rl.use_cnn"):
+            self.network = CNN(model=self.model)
+            self.network_agent = CNNAgent(environment=self.environment, network=self.network)
+        else:
+            self.network = ANN(model=self.model)
+            self.network_agent = ANNAgent(environment=self.environment, network=self.network)
+
+        self.state_fc = self.network_agent.state_fc
         self.mcts = MCTS(
             environment=self.environment,
-            rollout_policy_agent=self.ann_agent,
+            rollout_policy_agent=self.network_agent,
             use_time_budget=App.config("mcts.use_time_budget"),
             rollouts=App.config("mcts.searches"),
             c=App.config("mcts.c"),
@@ -224,21 +239,33 @@ class MCTSWorker:
                 gh = GameHistory()
                 while not self.environment.is_game_over:
                     move, distribution = self.agent.get_move(greedy=False)
-                    gh.register_move(self.environment.current_player, move, self.environment.ann_state, distribution)
+
+                    # Normal state
+                    gh.register_move(self.environment.current_player, move, self.state_fc(self.environment, rotate=False), distribution)
+
+                    # Rotates state
+                    size = self.environment.size
+                    rotated_move = (size-1-move[0], size-1-move[1])
+                    gh.register_move(self.environment.current_player, rotated_move, self.state_fc(self.environment, rotate=True), distribution[::-1])
+
                     self.environment.play(move)
                 buffer.store.remote(gh, storage)
 
 
 if __name__ == "__main__":
     env = HexGame(size=App.config("hex.size"))
-    network = ANN.build(
-        input_size=len(env.ann_state),
-        output_size=len(env.legal_binary_moves),
-        learning_rate=App.config("ann.learning_rate"),
-        activation=App.config("ann.activation"),
-        optimizer=App.config("ann.optimizer"),
-        hidden_size=App.config("ann.hidden_layers")
-    )
+
+    if App.config("rl.use_cnn"):
+        network = CNN.build_from_config(input_shape=env.cnn_state.shape, output_size=len(env.legal_binary_moves))
+    else:
+        network = ANN.build(
+            input_size=len(env.ann_state),
+            output_size=len(env.legal_binary_moves),
+            learning_rate=App.config("ann.learning_rate"),
+            activation=App.config("ann.activation"),
+            optimizer=App.config("ann.optimizer"),
+            hidden_size=App.config("ann.hidden_layers")
+        )
 
     buffer = Buffer.remote()
     storage = Storage.remote()

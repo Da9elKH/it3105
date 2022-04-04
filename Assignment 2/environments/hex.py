@@ -81,10 +81,21 @@ class HexGame(StateManager):
             return np.moveaxis(new_state, 0, 2)
 
     @property
+    def rotated_ann_state(self):
+        return self._ann_state(rotate=True)
+
+    @property
     def ann_state(self):
+        return self._ann_state(rotate=False)
+
+    def _ann_state(self, rotate=False):
+        state = self.flat_state
+        if rotate:
+            state = [state[0], *state[:0:-1]]
+
         dict = {0: 0, 1: 1, -1: 2}
         bits = lambda s: format(dict[s], f"0{2}b")
-        return np.array([float(s) for s in list(''.join([bits(s) for s in self.flat_state]))])
+        return np.array([float(s) for s in list(''.join([bits(s) for s in state]))])
 
     def _on_state_updated(self):
         self._uf_state_sync()

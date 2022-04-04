@@ -1,5 +1,5 @@
 import ray
-ray.init()
+ray.init(num_cpus=32)
 
 import wandb
 import time
@@ -71,12 +71,12 @@ class Buffer:
         self.num_tests = 0
 
     def store(self, game_history, storage):  # Game history
-        if random.random() > 0.1:
+        if random.random() > 0.05:
             self.buffer[self.num_games] = game_history
             self.num_games += 1
             self.num_samples += len(game_history.states)
             self.num_played_steps += len(game_history.states)
-            storage.set_info.remote("num_played_steps", self.num_played_steps)
+            storage.set_info.remote("num_games", self.num_games)
         else:
             self.test_buffer[self.num_games] = game_history
             self.num_tests += 1
@@ -119,10 +119,10 @@ class Trainer:
             num_games = ray.get(buffer.get_num_games.remote())
             num_tests = ray.get(buffer.get_num_tests.remote())
 
-            if num_samples > 0 and num_tests > 0:
+            if num_games > 1 and num_tests > 1:
 
-                train = ray.get(buffer.get_batch.remote(50, test=False))
-                test = ray.get(buffer.get_batch.remote(50, test=True))
+                train = ray.get(buffer.get_batch.remote(num_games//2, test=False))
+                test = ray.get(buffer.get_batch.remote(num_tests//2, test=True))
 
                 train_x, test_x = np.array(train[0].states), np.array(test[0].states)
                 train_y, test_y = np.array(train[0].distributions), np.array(test[0].distributions)
@@ -162,13 +162,13 @@ class Trainer:
                     storage.set_info.remote("epsilon", max(0.05, epsilon*0.99))
                     self.save(num_samples)
 
-                while ray.get(storage.get_info.remote("get_num_games"))/max(1, self.training_step) < 5:
+                while ray.get(buffer.get_num_games.remote())/max(1, self.training_step) < 1:
                     time.sleep(0.5)
             else:
                 time.sleep(2)
 
     def save(self, num_samples):
-        model_name = f"S{4}_B{num_samples}"
+        model_name = f"S{App.config('hex.size')}_B{num_samples}"
         self.network.save_model(model_name)
 
     def initialize_ann(self, storage):
@@ -203,7 +203,7 @@ class MCTSWorker:
         if checkpoint != self.checkpoint:
             weights = ray.get(storage.get_info.remote("nn_weights"))
             config = ray.get(storage.get_info.remote("nn_config"))
-            epsilon = ray.get(storage.set_info.remote("epsilon"))
+            epsilon = ray.get(storage.get_info.remote("epsilon"))
 
             seq_model = Sequential.from_config(config)
             seq_model.set_weights(weights)
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     buffer = Buffer.remote()
     storage = Storage.remote()
     trainer = Trainer.remote(network)
-    workers = [MCTSWorker.remote(env.size, network.model) for _ in range(1)]
+    workers = [MCTSWorker.remote(env.size, network.model) for _ in range(28)]
 
     # Run loops
     trainer.loop.remote(storage, buffer)
@@ -252,4 +252,4 @@ if __name__ == "__main__":
 
     while True:
         time.sleep(10)
-        print(f"Num samples: {ray.get(buffer.num_samples.remote())}")
+        print(f"Num samples: {ray.get(buffer.get_num_samples.remote())}")

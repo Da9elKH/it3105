@@ -17,7 +17,7 @@ from config import App
 import numpy as np
 
 
-MODELS_FOLDER = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/models/"
+MODELS_FOLDER = "models/"
 
 
 class CNN:
@@ -106,13 +106,13 @@ class CNN:
             name=f"conv_{len(hidden_layers)}")
         )
         model.add(Flatten(name=f"flat_{len(hidden_layers)}"))
-        model.add(Dense(
-            output_size,
-            activation="softmax",
-            name=f"dense_{len(hidden_layers)}",
-            kernel_regularizer=l2(reg_const))
-        )
-        #model.add(Softmax())
+        #model.add(Dense(
+        #    output_size,
+        #    activation="softmax",
+        #    name=f"dense_{len(hidden_layers)}",
+        #    kernel_regularizer=l2(reg_const))
+        #)
+        model.add(Softmax())
         model.compile(loss=CategoricalCrossentropy(), optimizer=opt, metrics=["accuracy", "KLDivergence"])
 
         return cls(model=model)

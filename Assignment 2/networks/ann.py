@@ -12,7 +12,7 @@ from misc import LiteModel
 from config import App
 import numpy as np
 
-MODELS_FOLDER = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/models/"
+MODELS_FOLDER = "models/"
 
 
 class ANN:

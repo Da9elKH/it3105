@@ -3,12 +3,13 @@ import arcade
 import arcade.gui
 import networkx as nx
 import math
-from agents.agent import Agent
+from agents import Agent, BufferAgent
 from copy import deepcopy
 from environments import HexGame, PLAYERS
 from misc import Move
 from typing import Callable
 from time import sleep
+import numpy as np
 
 RED_COLOR = "fc766a"
 RED_COLOR_LIGHT = "fed1cd"
@@ -108,12 +109,13 @@ class HexGUI(arcade.Window):
         if self._agent is None:
             self._agent = deepcopy(self.agent)
 
-        if self.agent and not self.environment.is_game_over:
-            action, meta = self.agent.get_move(greedy=True)
-
-            if meta is not None:
-                for location, value in meta.items():
-                    self.state_meta[location] = value
+        if self.agent and not self.environment.is_game_over and self.environment.current_player == -1:
+            action, dist = self.agent.get_move(greedy=True)
+            if dist is not None:
+                size = (self.environment.size, self.environment.size)
+                dist = np.array(dist).reshape((self.environment.size, self.environment.size))
+                for location in list(np.ndindex(size)):
+                    self.state_meta[location] = str(round(dist[location], 2))
             if action is not None:
                 self.environment.play(action)
             self.draw_board()
@@ -366,6 +368,9 @@ class StateRendering:
                 )
 
 if __name__ == "__main__":
-    env = HexGame(size=3)
-    gui = HexGUI(environment=env)
+    from agents import CNNAgent
+    from networks import CNN
+
+    env = HexGame(size=7)
+    gui = HexGUI(environment=env, agent=CNNAgent(environment=env, network=CNN.from_file("(1) CNN_S7_B1533.h5")))
     gui.run()

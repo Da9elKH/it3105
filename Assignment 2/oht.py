@@ -3,6 +3,7 @@ from agents import RandomAgent, MCTSAgent, CNNAgent, ANNAgent
 from environments import HexGame, HexGUI
 from networks import CNN, ANN
 from config import App
+from mcts import MCTS
 import numpy as np
 
 
@@ -10,7 +11,7 @@ class OHT(ActorClient):
     def __init__(self, auth, qualify):
         super().__init__(auth=auth, qualify=qualify)
         self.environment = HexGame(size=7)
-        self.agent = ANNAgent(environment=self.environment, network=ANN.from_file("(1) ANN_S7_B40697.h5"))
+        self.agent = CNNAgent(environment=self.environment, network=CNN.from_file(App.config("oht.agent")))
 
     def run(self, mode='qualifiers'):
         if App.config("oht.visualize"):
@@ -44,5 +45,5 @@ class OHT(ActorClient):
 
 
 if __name__ == "__main__":
-    oa = OHT(auth=App.config("oht.auth"), qualify=False)
+    oa = OHT(auth=App.config("oht.auth"), qualify=App.config("oht.qualify"))
     oa.run(mode=App.config("oht.mode"))

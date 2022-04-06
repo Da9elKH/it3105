@@ -1,20 +1,16 @@
 from functools import lru_cache
 import numpy as np
 from unionfind import UnionFind
-from misc.state_manager import StateManager
-from copy import deepcopy
-from typing import TypeVar, Generic, List
+from environments.environment import Environment
 from misc import Move
 from config import App
 import logging
 logger = logging.getLogger(__name__)
-logger.setLevel(App.config("hex.log_level"))
-
-THexGame = TypeVar("THexGame", bound="HexGame")
+logger.setLevel(App.config("environment.log_level"))
 PLAYERS = (1, -1)
 
 
-class HexGame(StateManager):
+class Hex(Environment):
     def __init__(self, size=5, start_player=PLAYERS[0], state=np.zeros((1,))):
         super().__init__()
         self.size = size
@@ -53,32 +49,16 @@ class HexGame(StateManager):
         return self._cnn_state(False, False)
 
     def _cnn_state(self, rotate=False, five=True):
-        if not five:
-            # TODO: Add bridge patterns (?), as https://www.idi.ntnu.no/emner/it3105/materials/neural/gao-2017.pdf
+        cnn_state = self.state if not rotate else self.state[::-1, ::-1]
+        player1 = (cnn_state == PLAYERS[0])
+        player2 = (cnn_state == PLAYERS[1])
+        empty = (cnn_state == 0)
 
-            cnn_state = self.state if not rotate else self.state[::-1, ::-1]
-            player1 = (cnn_state == PLAYERS[0])
-            player2 = (cnn_state == PLAYERS[1])
-            empty = (cnn_state == 0)
-
-            if self.current_player == PLAYERS[1]:
-                new_state = np.array([np.transpose(player2), np.transpose(player1), np.transpose(empty)], dtype=np.float32)
-            else:
-                new_state = np.array([player1, player2, empty], dtype=np.float32)
-            return np.moveaxis(new_state, 0, 2)
+        if self.current_player == PLAYERS[1]:
+            new_state = np.array([np.transpose(player2), np.transpose(player1), np.transpose(empty)], dtype=np.float32)
         else:
-            cnn_state = self.state
-            new_state = np.array(
-                [
-                    cnn_state == 1,
-                    cnn_state == -1,
-                    cnn_state == 0,
-                    np.ones((7, 7)) * self.current_player == 1,
-                    np.ones((7, 7)) * self.current_player == -1
-                ],
-                dtype=np.float32
-            )
-            return np.moveaxis(new_state, 0, 2)
+            new_state = np.array([player1, player2, empty], dtype=np.float32)
+        return np.moveaxis(new_state, 0, 2)
 
     @property
     def rotated_ann_state(self):
@@ -235,131 +215,3 @@ class HexGame(StateManager):
         self._uf = self._uf_init()
         self.state = 0
         self.broadcast_reset()
-
-
-class OldHexGame(StateManager, Generic[THexGame]):
-    def __init__(self, size=5, start_player=1):
-        super().__init__()
-        self.size = size
-        self.start_player = start_player
-        self.players = (1, 2)
-        self.current_player, self.state, self.shadow_state, self._union_find, self._game_over = self.init_values()
-
-    def reset(self):
-        self.current_player, self.state, self.shadow_state, self._union_find, self._game_over = self.init_values()
-
-    def init_values(self):
-        state = np.zeros((self.size, self.size))
-        shadow_state = np.zeros((self.size + 2, self.size + 2))
-        shadow_state[:, 0] = shadow_state[:, -1] = self.players[0]
-        shadow_state[0, :] = shadow_state[-1, :] = self.players[1]
-        union_find = {
-            self.players[0]: UnionFind(
-                ["start", "end", *[(i, j) for i in range(0, self.size + 2) for j in range(0, self.size + 2)]]),
-            self.players[1]: UnionFind(
-                ["start", "end", *[(i, j) for i in range(0, self.size + 2) for j in range(0, self.size + 2)]])
-        }
-        for i in range(self.size + 2):
-            union_find[self.players[0]].union("start", (i, self.size + 1))
-            union_find[self.players[0]].union("end", (i, 0))
-            union_find[self.players[1]].union("start", (0, i))
-            union_find[self.players[1]].union("end", (self.size + 1, i))
-
-        return self.start_player, state, shadow_state, union_find, False
-
-    def sync_state(self, state):
-        if state.shape == self.state.shape:
-            self.state += (self.state - self.state)
-
-    @property
-    def union_find(self) -> UnionFind:
-        return self._union_find[self.current_player]
-
-    @property
-    def is_game_over(self) -> bool:
-        return self._game_over
-
-    def update_game_status(self):
-        self._game_over = self.union_find.connected("start", "end")
-
-    """ MOVES """
-    @property
-    def legal_moves(self) -> List[Move]:
-        if self.is_game_over:
-            return []
-        return [tuple(x) for x in np.argwhere(self.state == 0).tolist()]
-
-    @property
-    def legal_binary_moves(self):
-        return np.logical_not(self.state).flatten().tolist()
-
-    def transform_move_to_binary_move_index(self, move: Move) -> int:
-        return move[0] * self.size + move[1]
-
-    def transform_binary_move_index_to_move(self, binary_move_index: int) -> Move:
-        return np.unravel_index(binary_move_index, shape=self.state.shape)
-
-    @property
-    def result(self):
-        if self.current_player == 1:
-            return 1
-        else:
-            return -1
-
-    @property
-    def flat_state(self):
-        bits = lambda s: format(s if s == 1 else 2, f"0{2}b")
-        state = [self.current_player, *self.state.flatten()]
-        return np.array([float(s) for s in list(''.join([bits(s) for s in state]))])
-
-    @property
-    def cnn_state(self):
-        player_state = (self.state == self.current_player)
-        opponent_state = (self.state == self.next_player)
-
-        # Transposing the state for player two to be seen as win from top to bottom
-        if self.current_player == self.players[1]:
-            player_state = player_state.T
-            opponent_state = opponent_state.T
-
-        return np.moveaxis(np.array([player_state, opponent_state]), 0, 2)
-
-    @property
-    def state_test(self):
-        return [self.current_player, *self.state.flatten()]
-
-    def copy(self) -> THexGame:
-        return deepcopy(self)
-
-    @property
-    def next_player(self):
-        return self.players[0] if self.current_player == self.players[1] else self.players[1]
-
-    def switch_player(self):
-        self.current_player = self.next_player
-
-    def play(self, move: Move):
-        self.execute(move)
-
-    def execute(self, move: Move):
-        if move in self.legal_moves:
-            shadow_move = (move[0] + 1, move[1] + 1)
-            self.state[move] = self.current_player
-            self.shadow_state[shadow_move] = self.current_player
-            self._union_neighbors(shadow_move)
-
-            # Cache game over
-            self.update_game_status()
-
-            if not self.is_game_over:
-                self.switch_player()
-
-    def _union_neighbors(self, move: Move):
-        r, c = move
-        neighbors = [(r+1, c-1), (r, c-1), (r-1, c), (r-1, c+1), (r, c+1), (r+1, c)]
-
-        for neighbor in neighbors:
-            if neighbor[0] < 0 or neighbor[1] < 0:
-                continue
-            if self.shadow_state[neighbor] == self.shadow_state[move]:
-                self.union_find.union(neighbor, move)

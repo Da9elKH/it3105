@@ -1,6 +1,6 @@
 from ActorClient import ActorClient
 from agents import CNNAgent
-from environments import HexGame
+from environments import Hex
 from networks import CNN
 from config import App
 import numpy as np
@@ -9,7 +9,7 @@ import numpy as np
 class OHT(ActorClient):
     def __init__(self, auth, qualify, environment=None):
         super().__init__(auth=auth, qualify=qualify)
-        self.environment = environment if environment else HexGame(size=App.config("hex.size"))
+        self.environment = environment if environment else Hex(size=App.config("environment.size"))
         self.agent = CNNAgent(environment=self.environment, network=CNN.from_file(App.config("oht.agent")))
 
     def handle_game_start(self, start_player):

@@ -1,10 +1,10 @@
-from misc.state_manager import StateManager
+from environments.environment import Environment
 from misc.types import Move
 from copy import deepcopy, copy
 import numpy as np
 from typing import List
 
-class Nim(StateManager):
+class Nim(Environment):
     def __init__(self, num_stones, max_choice):
         super().__init__()
         self._num_stones = num_stones

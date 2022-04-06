@@ -1,5 +1,5 @@
 from agents import Agent
-from misc import StateManager
+from environments import Environment
 from tqdm import trange
 from itertools import permutations
 from typing import Dict
@@ -10,7 +10,7 @@ import seaborn as sbn
 
 
 class TOPP:
-    def __init__(self, environment: StateManager):
+    def __init__(self, environment: Environment):
         self.environment = environment
         self.agents: Dict[str, Agent] = {}
         self.stats: Dict[str, Dict[str, int]] = {}

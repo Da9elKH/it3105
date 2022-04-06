@@ -1,16 +1,17 @@
 from functools import lru_cache
 import numpy as np
 from unionfind import UnionFind
-from misc import StateManager, Move
+from environments import Environment
+from misc import Move
 from typing import TypeVar, Generic, Tuple, List
 
 
 PLAYERS = (1, -1)
 
-THexGame = TypeVar("THexGame", bound="HexGame")
+THexGame = TypeVar("THexGame", bound="Hex")
 
 
-class HexGame(StateManager):
+class HexGame(Environment):
     def __init__(self, size=5, start_player=PLAYERS[0], state=np.zeros((1,))):
         super().__init__()
         self.size = size

@@ -1,12 +1,13 @@
 from .agent import Agent
-from misc import StateManager, LiteModel
+from environments import Environment
+from misc import LiteModel
 from networks.cnn import CNN
 from config import App
 import numpy as np
 
 
 class CNNAgent(Agent):
-    def __init__(self, environment: StateManager = None, network: CNN = None):
+    def __init__(self, environment: Environment = None, network: CNN = None):
         super(CNNAgent, self).__init__(environment)
         self.network = network
         self.T = App.config("cnn.temperature")
@@ -24,14 +25,11 @@ class CNNAgent(Agent):
             dist = policy.flatten()
 
         dist = dist * self.environment.legal_binary_moves
-
-        # If we want to have a factor for maxing distribution
-        # dist = dist**(1/T)
-
         dist = dist**(1/self.T) / sum(dist**(1/self.T))
         return dist
 
-    def state_fc(self, environment, rotate=False):
+    @staticmethod
+    def state_fc(environment: Environment, rotate=False):
         if rotate:
             return environment.rotated_cnn_state
         else:

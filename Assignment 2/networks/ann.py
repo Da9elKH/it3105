@@ -9,16 +9,15 @@ from tensorflow.keras.optimizers import get as optimizer_get
 from typing import Tuple
 from os import path
 from misc import LiteModel
-from config import App
+from config import App, ROOT_DIR
 import numpy as np
 
-MODELS_FOLDER = "models/"
+MODELS_FOLDER = f"{ROOT_DIR}/models/"
 
 
 class ANN:
-    def __init__(self, model: Model, config=None):
+    def __init__(self, model: Model):
         self.model = model
-        self.config = {} if not config else config
 
     def predict(self, x):
         if not isinstance(x, np.ndarray):
@@ -57,10 +56,10 @@ class ANN:
     @classmethod
     def build_from_config(cls, input_size: int, output_size: int, **params):
         config = {"input_size": input_size, "output_size": output_size, **App.config("ann"), **params}
-        return cls(**config)
+        return cls.build(**config)
 
     @classmethod
-    def build(cls, input_size: int, hidden_size: Tuple[int, ...], output_size: int, learning_rate: float, activation: str, optimizer: str):
+    def build(cls, input_size: int, hidden_size: Tuple[int, ...], output_size: int, learning_rate: float, activation: str, optimizer: str, **params):
         """ Initialize the NN with the given depth and width for the problem environment """
 
         # Dynamically get activation function and optimizer
@@ -82,8 +81,7 @@ class ANN:
         model.add(Dense(output_size, activation="softmax", name=f"dense_{len(hidden_size) + 1}"))
         model.compile(optimizer=opt, loss=CategoricalCrossentropy(), metrics=["accuracy"])
 
-        config = {"lr": learning_rate, "activation": activation, "optimizer": optimizer, "i_size": input_size, "o_size": output_size, "h_layers": hidden_size}
-        return cls(model=model, config=config)
+        return cls(model=model)
 
     """ MISC """
     def save_model(self, suffix):

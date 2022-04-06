@@ -488,7 +488,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_tuple__17);
   <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_tuple__17);
 </pre><pre class="cython line score-0">&#xA0;<span class="">013</span>: </pre>
-<pre class="cython line score-24" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">014</span>: <span class="n">THexGame</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s">&quot;THexGame&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s">&quot;HexGame&quot;</span><span class="p">)</span></pre>
+<pre class="cython line score-24" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">014</span>: <span class="n">THexGame</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s">&quot;THexGame&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s">&quot;Hex&quot;</span><span class="p">)</span></pre>
 <pre class='cython code score-24 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_3, __pyx_n_s_TypeVar);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 14, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
   __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 14, __pyx_L1_error)</span>
@@ -505,7 +505,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_tuple__18);
   <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_tuple__18);
 </pre><pre class="cython line score-0">&#xA0;<span class="">015</span>: </pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">016</span>: <span class="k">cdef</span> <span class="k">class</span> <span class="nf">HexGame</span><span class="p">:</span></pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">016</span>: <span class="k">cdef</span> <span class="k">class</span> <span class="nf">Hex</span><span class="p">:</span></pre>
 <pre class='cython code score-0 '>struct __pyx_obj_7modules_HexGame {
   PyObject_HEAD
   struct __pyx_vtabstruct_7modules_HexGame *__pyx_vtab;
@@ -565,7 +565,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_4size___get__(struct __pyx_obj_7modu
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.size.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.size.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -598,7 +598,7 @@ static int __pyx_pf_7modules_7HexGame_4size_2__set__(struct __pyx_obj_7modules_H
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.size.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.size.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -633,7 +633,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_14current_player___get__(struct __py
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.current_player.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.current_player.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -666,7 +666,7 @@ static int __pyx_pf_7modules_7HexGame_14current_player_2__set__(struct __pyx_obj
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.current_player.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.current_player.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -701,7 +701,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_13_start_player___get__(struct __pyx
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._start_player.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._start_player.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -734,7 +734,7 @@ static int __pyx_pf_7modules_7HexGame_13_start_player_2__set__(struct __pyx_obj_
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._start_player.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._start_player.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -803,7 +803,7 @@ static int __pyx_pf_7modules_7HexGame_3_uf_2__set__(struct __pyx_obj_7modules_He
   goto __pyx_L0;
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._uf.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._uf.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -868,7 +868,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_13_is_game_over___get__(struct __pyx
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._is_game_over.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._is_game_over.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -901,7 +901,7 @@ static int __pyx_pf_7modules_7HexGame_13_is_game_over_2__set__(struct __pyx_obj_
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._is_game_over.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._is_game_over.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -970,7 +970,7 @@ static int __pyx_pf_7modules_7HexGame_12_legal_moves_2__set__(struct __pyx_obj_7
   goto __pyx_L0;
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._legal_moves.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._legal_moves.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -1069,7 +1069,7 @@ static int __pyx_pf_7modules_7HexGame_13_shadow_state_2__set__(struct __pyx_obj_
   goto __pyx_L0;
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._shadow_state.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._shadow_state.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -1168,7 +1168,7 @@ static int __pyx_pf_7modules_7HexGame_12_reset_hooks_2__set__(struct __pyx_obj_7
   goto __pyx_L0;
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._reset_hooks.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._reset_hooks.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -1267,7 +1267,7 @@ static int __pyx_pf_7modules_7HexGame_11_move_hooks_2__set__(struct __pyx_obj_7m
   goto __pyx_L0;
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._move_hooks.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._move_hooks.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -1385,7 +1385,7 @@ static int __pyx_pw_7modules_7HexGame_1__init__(PyObject *__pyx_v_self, PyObject
   __pyx_L5_argtuple_error:;
   <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("__init__", 0, 0, 3, __pyx_nargs); <span class='error_goto'>__PYX_ERR(0, 28, __pyx_L3_error)</span>
   __pyx_L3_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return -1;
   __pyx_L4_argument_unpacking_done:;
@@ -1411,7 +1411,7 @@ static int __pyx_pf_7modules_7HexGame___init__(struct __pyx_obj_7modules_HexGame
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_2);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -1563,7 +1563,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_5state___get__(struct __pyx_obj_7mod
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.state.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.state.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -1610,7 +1610,7 @@ static int __pyx_pf_7modules_7HexGame_5state_2__set__(struct __pyx_obj_7modules_
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.state.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.state.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -1648,7 +1648,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_10flat_state___get__(struct __pyx_ob
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_2);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.flat_state.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.flat_state.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -1721,7 +1721,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_17rotated_cnn_state___get__(struct _
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.rotated_cnn_state.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.rotated_cnn_state.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -1762,7 +1762,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_9cnn_state___get__(struct __pyx_obj_
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.cnn_state.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.cnn_state.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -1806,7 +1806,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_9cnn_state___get__(struct __pyx_obj_
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_6);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_7);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_8);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._cnn_state", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._cnn_state", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_v_size);
@@ -2130,7 +2130,7 @@ struct __pyx_opt_args_7modules_7HexGame__cnn_state {
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_6);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_7);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_8);
-  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.HexGame._on_state_updated", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.Hex._on_state_updated", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_7genexpr__pyx_v_x);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -2328,7 +2328,7 @@ struct __pyx_opt_args_7modules_7HexGame__cnn_state {
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._state_init", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._state_init", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>((PyObject *)__pyx_v_shadow_state);
@@ -2496,7 +2496,7 @@ static void __pyx_f_7modules_7HexGame_play(struct __pyx_obj_7modules_HexGame *__
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_2);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
-  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.HexGame.play", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.Hex.play", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_v_move);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -2563,7 +2563,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __pyx_L5_argtuple_error:;
   <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("play", 1, 1, 1, __pyx_nargs); <span class='error_goto'>__PYX_ERR(0, 109, __pyx_L3_error)</span>
   __pyx_L3_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.play", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.play", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
@@ -2596,7 +2596,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_2play(struct __pyx_obj_7modules_HexG
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.play", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.play", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -2781,7 +2781,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_11legal_moves___get__(struct __pyx_o
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.legal_moves.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.legal_moves.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -2840,7 +2840,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_18legal_binary_moves___get__(struct 
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_6);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.legal_binary_moves.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.legal_binary_moves.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3003,7 +3003,7 @@ static int __pyx_f_7modules_7HexGame_transform_move_to_binary_move_index(struct 
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_2);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
-  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.HexGame.transform_move_to_binary_move_index", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.Hex.transform_move_to_binary_move_index", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   __pyx_r = 0;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -3071,7 +3071,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __pyx_L5_argtuple_error:;
   <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("transform_move_to_binary_move_index", 1, 1, 1, __pyx_nargs); <span class='error_goto'>__PYX_ERR(0, 143, __pyx_L3_error)</span>
   __pyx_L3_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.transform_move_to_binary_move_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.transform_move_to_binary_move_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
@@ -3104,7 +3104,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_4transform_move_to_binary_move_index
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.transform_move_to_binary_move_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.transform_move_to_binary_move_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3227,7 +3227,7 @@ static PyObject *__pyx_f_7modules_7HexGame_transform_binary_move_index_to_move(s
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.transform_binary_move_index_to_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.transform_binary_move_index_to_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3296,7 +3296,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __pyx_L5_argtuple_error:;
   <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("transform_binary_move_index_to_move", 1, 1, 1, __pyx_nargs); <span class='error_goto'>__PYX_ERR(0, 146, __pyx_L3_error)</span>
   __pyx_L3_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.transform_binary_move_index_to_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.transform_binary_move_index_to_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
@@ -3324,7 +3324,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_6transform_binary_move_index_to_move
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.transform_binary_move_index_to_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.transform_binary_move_index_to_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3398,7 +3398,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_11next_player___get__(struct __pyx_o
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.next_player.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.next_player.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3441,7 +3441,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_15_current_player___get__(struct __p
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._current_player.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._current_player.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3521,7 +3521,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_12is_game_over___get__(struct __pyx_
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.is_game_over.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.is_game_over.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3560,7 +3560,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_6result___get__(struct __pyx_obj_7mo
   /* function exit code */
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.result.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.result.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3600,7 +3600,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_2uf___get__(struct __pyx_obj_7module
   __pyx_L1_error:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_2);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.uf.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.uf.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3640,7 +3640,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_2uf___get__(struct __pyx_obj_7module
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_7);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_8);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_9);
-  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.HexGame._uf_state_sync", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.Hex._uf_state_sync", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_v_location);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -3801,7 +3801,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_2uf___get__(struct __pyx_obj_7module
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_6);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_7);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_8);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.NEIGHBORS", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.NEIGHBORS", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -3922,7 +3922,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_2uf___get__(struct __pyx_obj_7module
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_7);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_8);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_9);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._uf_neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._uf_neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_8genexpr1__pyx_v_i);
@@ -4087,7 +4087,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_2uf___get__(struct __pyx_obj_7module
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_2);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
-  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.HexGame._uf_merge_neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("modules.Hex._uf_merge_neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_v_neighbors);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_v_neighbor);
@@ -4217,7 +4217,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_2uf___get__(struct __pyx_obj_7module
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_6);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame._uf_init", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex._uf_init", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_v_uf);
@@ -4565,7 +4565,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_8copy(struct __pyx_obj_7modules_HexG
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.copy", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.copy", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_v_new);
@@ -4704,7 +4704,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __pyx_L5_argtuple_error:;
   <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("reset", 0, 0, 1, __pyx_nargs); <span class='error_goto'>__PYX_ERR(0, 221, __pyx_L3_error)</span>
   __pyx_L3_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.reset", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.reset", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
@@ -4727,7 +4727,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_10reset(struct __pyx_obj_7modules_He
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_6);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.reset", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.reset", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -4844,7 +4844,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_12broadcast_reset(struct __pyx_obj_7
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_6);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.broadcast_reset", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.broadcast_reset", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_8genexpr2__pyx_v_hook);
@@ -4978,7 +4978,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __pyx_L5_argtuple_error:;
   <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("broadcast_move", 1, 1, 1, __pyx_nargs); <span class='error_goto'>__PYX_ERR(0, 231, __pyx_L3_error)</span>
   __pyx_L3_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.broadcast_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.broadcast_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
@@ -5012,7 +5012,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_14broadcast_move(struct __pyx_obj_7m
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_6);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.broadcast_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.broadcast_move", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_8genexpr3__pyx_v_hook);
@@ -5151,7 +5151,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __pyx_L5_argtuple_error:;
   <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("register_reset_hook", 1, 1, 1, __pyx_nargs); <span class='error_goto'>__PYX_ERR(0, 234, __pyx_L3_error)</span>
   __pyx_L3_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.register_reset_hook", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.register_reset_hook", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
@@ -5174,7 +5174,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_16register_reset_hook(struct __pyx_o
   __pyx_r = Py_None; <span class='pyx_macro_api'>__Pyx_INCREF</span>(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.register_reset_hook", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.register_reset_hook", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -5266,7 +5266,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __pyx_L5_argtuple_error:;
   <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("register_move_hook", 1, 1, 1, __pyx_nargs); <span class='error_goto'>__PYX_ERR(0, 237, __pyx_L3_error)</span>
   __pyx_L3_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.register_move_hook", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.register_move_hook", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
@@ -5289,7 +5289,7 @@ static PyObject *__pyx_pf_7modules_7HexGame_18register_move_hook(struct __pyx_ob
   __pyx_r = Py_None; <span class='pyx_macro_api'>__Pyx_INCREF</span>(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.HexGame.register_move_hook", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("modules.Hex.register_move_hook", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
@@ -6359,7 +6359,7 @@ struct __pyx_vtabstruct_7modules_MCTS {
 static struct __pyx_vtabstruct_7modules_MCTS *__pyx_vtabptr_7modules_MCTS;
 </pre><pre class="cython line score-0">&#xA0;<span class="">276</span>: </pre>
 <pre class="cython line score-0">&#xA0;<span class="">277</span>:     <span class="k">cdef</span> <span class="kr">public</span><span class="p">:</span></pre>
-<pre class="cython line score-17" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">278</span>:         <span class="n">HexGame</span> <span class="n">environment</span></pre>
+<pre class="cython line score-17" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">278</span>:         <span class="n">Hex</span> <span class="n">environment</span></pre>
 <pre class='cython code score-17 '>/* Python wrapper */
 static PyObject *__pyx_pw_7modules_4MCTS_11environment_1__get__(PyObject *__pyx_v_self); /*proto*/
 static PyObject *__pyx_pw_7modules_4MCTS_11environment_1__get__(PyObject *__pyx_v_self) {
@@ -6458,7 +6458,7 @@ static int __pyx_pf_7modules_4MCTS_11environment_4__del__(struct __pyx_obj_7modu
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return __pyx_r;
 }
-</pre><pre class="cython line score-17" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">279</span>:         <span class="n">HexGame</span> <span class="n">_reset_environment</span></pre>
+</pre><pre class="cython line score-17" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">279</span>:         <span class="n">Hex</span> <span class="n">_reset_environment</span></pre>
 <pre class='cython code score-17 '>/* Python wrapper */
 static PyObject *__pyx_pw_7modules_4MCTS_18_reset_environment_1__get__(PyObject *__pyx_v_self); /*proto*/
 static PyObject *__pyx_pw_7modules_4MCTS_18_reset_environment_1__get__(PyObject *__pyx_v_self) {
@@ -6997,7 +6997,7 @@ static int __pyx_pf_7modules_4MCTS_15use_time_budget_2__set__(struct __pyx_obj_7
   return __pyx_r;
 }
 </pre><pre class="cython line score-0">&#xA0;<span class="">286</span>: </pre>
-<pre class="cython line score-124" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">287</span>:     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HexGame</span> <span class="n">environment</span><span class="p">,</span> <span class="nb">bint</span> <span class="n">use_time_budget</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">double</span> <span class="n">time_budget</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="nb">int</span> <span class="n">rollouts</span> <span class="o">=</span> <span class="mf">0</span><span class="p">,</span> <span class="n">double</span> <span class="n">c</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="nb">bint</span> <span class="n">verbose</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span></pre>
+<pre class="cython line score-124" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">287</span>:     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Hex</span> <span class="n">environment</span><span class="p">,</span> <span class="nb">bint</span> <span class="n">use_time_budget</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">double</span> <span class="n">time_budget</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="nb">int</span> <span class="n">rollouts</span> <span class="o">=</span> <span class="mf">0</span><span class="p">,</span> <span class="n">double</span> <span class="n">c</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="nb">bint</span> <span class="n">verbose</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span></pre>
 <pre class='cython code score-124 '>/* Python wrapper */
 static int __pyx_pw_7modules_4MCTS_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static int __pyx_pw_7modules_4MCTS_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
@@ -7373,7 +7373,7 @@ struct __pyx_opt_args_7modules_4MCTS__tree_policy {
   __pyx_t_7 = 0;
   goto __pyx_L0;
 </pre><pre class="cython line score-0">&#xA0;<span class="">309</span>: </pre>
-<pre class="cython line score-85" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">310</span>:     <span class="k">cpdef</span> <span class="kt">tuple</span> <span class="nf">_rollout_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HexGame</span> <span class="n">environment</span><span class="p">):</span></pre>
+<pre class="cython line score-85" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">310</span>:     <span class="k">cpdef</span> <span class="kt">tuple</span> <span class="nf">_rollout_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Hex</span> <span class="n">environment</span><span class="p">):</span></pre>
 <pre class='cython code score-85 '>static PyObject *__pyx_pw_7modules_4MCTS_3_rollout_policy(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
@@ -7790,7 +7790,7 @@ static PyObject *__pyx_pf_7modules_4MCTS_4search(struct __pyx_obj_7modules_MCTS 
 </pre><pre class="cython line score-1" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">318</span>:         <span class="k">cdef</span> <span class="kt">Node</span> <span class="nf">node</span> <span class="o">=</span> <span class="bp">None</span></pre>
 <pre class='cython code score-1 '>  <span class='pyx_macro_api'>__Pyx_INCREF</span>(Py_None);
   __pyx_v_node = ((struct __pyx_obj_7modules_Node *)Py_None);
-</pre><pre class="cython line score-1" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">319</span>:         <span class="k">cdef</span> <span class="kt">HexGame</span> <span class="nf">environment</span> <span class="o">=</span> <span class="bp">None</span></pre>
+</pre><pre class="cython line score-1" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">319</span>:         <span class="k">cdef</span> <span class="kt">Hex</span> <span class="nf">environment</span> <span class="o">=</span> <span class="bp">None</span></pre>
 <pre class='cython code score-1 '>  <span class='pyx_macro_api'>__Pyx_INCREF</span>(Py_None);
   __pyx_v_environment = ((struct __pyx_obj_7modules_HexGame *)Py_None);
 </pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">320</span>:         <span class="k">cdef</span> <span class="kt">int</span> <span class="nf">winner</span> <span class="o">=</span> <span class="mf">0</span></pre>
@@ -8052,7 +8052,7 @@ struct __pyx_opt_args_7modules_4MCTS_selection {
   <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_t_1);
   __pyx_v_node = ((struct __pyx_obj_7modules_Node *)__pyx_t_1);
   __pyx_t_1 = 0;
-</pre><pre class="cython line score-18" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">344</span>:         <span class="k">cdef</span> <span class="kt">HexGame</span> <span class="nf">environment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></pre>
+</pre><pre class="cython line score-18" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">344</span>:         <span class="k">cdef</span> <span class="kt">Hex</span> <span class="nf">environment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></pre>
 <pre class='cython code score-18 '>  __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(((PyObject *)__pyx_v_self-&gt;environment), __pyx_n_s_copy);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 344, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
   __pyx_t_3 = NULL;
@@ -8136,7 +8136,7 @@ struct __pyx_opt_args_7modules_4MCTS_selection {
   __pyx_t_1 = 0;
   goto __pyx_L0;
 </pre><pre class="cython line score-0">&#xA0;<span class="">353</span>: </pre>
-<pre class="cython line score-9" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">354</span>:     <span class="k">cdef</span> <span class="kt">tuple</span> <span class="nf">expand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Node</span> <span class="n">node</span><span class="p">,</span> <span class="n">HexGame</span> <span class="n">environment</span><span class="p">):</span></pre>
+<pre class="cython line score-9" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">354</span>:     <span class="k">cdef</span> <span class="kt">tuple</span> <span class="nf">expand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Node</span> <span class="n">node</span><span class="p">,</span> <span class="n">Hex</span> <span class="n">environment</span><span class="p">):</span></pre>
 <pre class='cython code score-9 '>static PyObject *__pyx_f_7modules_4MCTS_expand(CYTHON_UNUSED struct __pyx_obj_7modules_MCTS *__pyx_v_self, struct __pyx_obj_7modules_Node *__pyx_v_node, struct __pyx_obj_7modules_HexGame *__pyx_v_environment) {
   PyObject *__pyx_v_move = 0;
   int __pyx_v_i;
@@ -8346,7 +8346,7 @@ struct __pyx_opt_args_7modules_4MCTS_selection {
   __pyx_t_8 = 0;
   goto __pyx_L0;
 </pre><pre class="cython line score-0">&#xA0;<span class="">375</span>: </pre>
-<pre class="cython line score-4" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">376</span>:     <span class="k">cdef</span> <span class="kt">int</span> <span class="nf">rollout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HexGame</span> <span class="n">environment</span><span class="p">):</span></pre>
+<pre class="cython line score-4" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">376</span>:     <span class="k">cdef</span> <span class="kt">int</span> <span class="nf">rollout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Hex</span> <span class="n">environment</span><span class="p">):</span></pre>
 <pre class='cython code score-4 '>static int __pyx_f_7modules_4MCTS_rollout(struct __pyx_obj_7modules_MCTS *__pyx_v_self, struct __pyx_obj_7modules_HexGame *__pyx_v_environment) {
   PyObject *__pyx_v_action = 0;
   int __pyx_r;

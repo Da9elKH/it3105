@@ -9,11 +9,12 @@ from tensorflow.keras.regularizers import l2
 from misc import LiteModel
 from os import path
 from typing import Tuple
-from config import App
+from config import App, ROOT_DIR
+from pathlib import Path
 import numpy as np
 
 
-MODELS_FOLDER = "models/"
+MODELS_FOLDER = f"{ROOT_DIR}/models/"
 
 
 class CNN:

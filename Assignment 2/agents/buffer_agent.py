@@ -1,11 +1,11 @@
 from .agent import Agent
-from misc.state_manager import StateManager
+from environments.environment import Environment
 
 # TODO: FIX THIS
 
 
 class BufferAgent(Agent):
-    def __init__(self, environment: StateManager = None):
+    def __init__(self, environment: Environment = None):
         super().__init__(environment)
         self.action_buffer = []
         self.distribution_buffer = []

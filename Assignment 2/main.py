@@ -1,5 +1,5 @@
 from config import App
-from environments import HexGame, HexGUI
+from environments import Hex, HexGUI
 from agents import ANNAgent, CNNAgent
 from networks import CNN, ANN
 from topp import TOPP
@@ -22,7 +22,7 @@ def setup_logger():
 
 
 def run():
-    environment = HexGame(size=App.config("hex.size"))
+    environment = Hex(size=App.config("environment.size"))
 
     for task in App.config("run"):
 

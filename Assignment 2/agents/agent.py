@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
-from misc import StateManager, Move
+from environments import Environment
+from misc import Move
 import numpy as np
 import random
 
 
 class Agent(ABC):
-    def __init__(self, environment: StateManager = None):
+    def __init__(self, environment: Environment = None):
         self.environment = environment
         if self.environment:
             self.register_environment_move_hook()

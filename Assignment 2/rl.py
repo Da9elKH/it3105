@@ -1,5 +1,5 @@
 from agents import ANNAgent, MCTSAgent, CNNAgent
-from environments import HexGame, HexGUI
+from environments import Hex, HexGUI
 from networks import ANN, CNN
 from memory import Memory
 from tqdm import trange
@@ -17,7 +17,7 @@ class ReinforcementLearning:
         self.eps_decay = 0.05 ** (1. / self.games)
 
         self.models = []
-        self.environment = HexGame(size=7)
+        self.environment = Hex(size=7)
 
         """
         self.network = ANN.build(
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     #states, dists = preprocessing_new()
     #states, dists = ann_preprocessing()
 
-    env = HexGame(size=7)
+    env = Hex(size=7)
     """
     ann = ANN.build(
         learning_rate=0.001,

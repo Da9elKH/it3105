@@ -11,9 +11,9 @@ from unionfind import UnionFind
 
 cdef tuple PLAYERS = (1, -1)
 
-THexGame = TypeVar("THexGame", bound="HexGame")
+THexGame = TypeVar("THexGame", bound="Hex")
 
-cdef class HexGame:
+cdef class Hex:
     cdef public:
         int size
         int current_player
@@ -275,8 +275,8 @@ cdef class Node:
 cdef class MCTS:
 
     cdef public:
-        HexGame environment
-        HexGame _reset_environment
+        Hex environment
+        Hex _reset_environment
         Node root
         double time_budget
         double c
@@ -284,7 +284,7 @@ cdef class MCTS:
         bint verbose
         bint use_time_budget      
 
-    def __init__(self, HexGame environment, bint use_time_budget=False, double time_budget = 0.0, int rollouts = 0, double c = 1.0, bint verbose = False):
+    def __init__(self, Hex environment, bint use_time_budget=False, double time_budget = 0.0, int rollouts = 0, double c = 1.0, bint verbose = False):
         self.environment = environment
         self.root = Node(player=self.environment.current_player)
         self.time_budget = time_budget
@@ -307,7 +307,7 @@ cdef class MCTS:
         i = random.choice(max_ids)
         return nodes[i]
 
-    cpdef tuple _rollout_policy(self, HexGame environment):
+    cpdef tuple _rollout_policy(self, Hex environment):
         return random.choice(environment.legal_moves)
 
     """ PROCESSES """
@@ -316,7 +316,7 @@ cdef class MCTS:
         cdef int start_time = time.time()
         cdef int num_rollouts = 0
         cdef Node node = None
-        cdef HexGame environment = None
+        cdef Hex environment = None
         cdef int winner = 0
 
         while (time.time() - start_time < self.time_budget and self.use_time_budget) or (num_rollouts < self.rollouts and not self.use_time_budget):
@@ -341,7 +341,7 @@ cdef class MCTS:
         Select a single node in the three to perform a simulation from
         """
         cdef Node node = self.root
-        cdef HexGame environment = self.environment.copy()
+        cdef Hex environment = self.environment.copy()
         cdef dict children = node.children
 
         while len(children) != 0:
@@ -351,7 +351,7 @@ cdef class MCTS:
 
         return node, environment
 
-    cdef tuple expand(self, Node node, HexGame environment):
+    cdef tuple expand(self, Node node, Hex environment):
         """
         Generate the children nodes of the passed parent node, and add them to the tree
         """
@@ -373,7 +373,7 @@ cdef class MCTS:
 
         return node, environment
 
-    cdef int rollout(self, HexGame environment):
+    cdef int rollout(self, Hex environment):
         """
         Simulate a game based on the rollout policy and return the winning player
         """

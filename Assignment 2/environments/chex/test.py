@@ -17,7 +17,7 @@ import modules
 
 if __name__ == "__main__":
 
-    env = modules.HexGame(size=7)
+    env = modules.Hex(size=7)
 
     # CCCC
     mcts1 = modules.MCTS(environment=env, time_budget=1, rollouts=1, c=1.5, verbose=True)

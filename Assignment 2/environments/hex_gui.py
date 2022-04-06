@@ -5,7 +5,7 @@ import networkx as nx
 import math
 from agents import Agent
 from copy import deepcopy
-from environments import HexGame, PLAYERS
+from environments import Hex, PLAYERS
 from misc import Move
 from typing import Callable
 import numpy as np
@@ -17,7 +17,7 @@ BLUE_COLOR_LIGHT = "bacbde"
 
 
 class HexGUI(arcade.Window):
-    def __init__(self, environment=HexGame(size=7), agent: Union[Agent, None] = None, width=1000, height=700, view_update_rate=None):
+    def __init__(self, environment=Hex(size=7), agent: Union[Agent, None] = None, width=1000, height=700, view_update_rate=None):
         if agent:
             view_update_rate = 0.2
 
@@ -384,6 +384,6 @@ if __name__ == "__main__":
     from agents import CNNAgent
     from networks import CNN
 
-    env = HexGame(size=7)
+    env = Hex(size=7)
     gui = HexGUI(environment=env, agent=CNNAgent(environment=env, network=CNN.from_file("7x7/(1) CNN_S7_B1533.h5")))
     gui.run()

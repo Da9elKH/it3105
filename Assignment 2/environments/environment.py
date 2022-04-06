@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Callable, List
-from .types import Move
-TStateManager = TypeVar("TStateManager", bound="StateManager")
+from misc.types import Move
+import numpy as np
+
+TEnvironment = TypeVar("TEnvironment", bound="Environment")
 
 
-class StateManager(ABC, Generic[TStateManager]):
+class Environment(ABC, Generic[TEnvironment]):
     def __init__(self):
         self.current_player: int = 1
         self._reset_hooks: set[Callable] = set([])
@@ -46,8 +48,33 @@ class StateManager(ABC, Generic[TStateManager]):
 
     @property
     @abstractmethod
+    def state(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
     def flat_state(self) -> List[int]:
         """ Returns a state to be used together with neural networks """
+        pass
+
+    @property
+    @abstractmethod
+    def ann_state(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def rotated_ann_state(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def cnn_state(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def rotated_cnn_state(self) -> np.ndarray:
         pass
 
     @abstractmethod
@@ -62,7 +89,7 @@ class StateManager(ABC, Generic[TStateManager]):
         pass
 
     @abstractmethod
-    def copy(self) -> TStateManager:
+    def copy(self) -> TEnvironment:
         """ Deep copy of the state manager """
         pass
 

@@ -6,7 +6,7 @@ import time
 import numpy as np
 import random
 from collections import deque
-from environments import HexGame
+from environments import Hex
 from networks import ANN, CNN
 from mcts import MCTS
 from agents import MCTSAgent, ANNAgent, CNNAgent
@@ -165,7 +165,7 @@ class Trainer:
                 time.sleep(2)
 
     def save(self, num_games):
-        model_name = f"S{App.config('hex.size')}_B{num_games}"
+        model_name = f"S{App.config('environment.size')}_B{num_games}"
         self.network.save_model(model_name)
 
     def initialize_ann(self, storage):
@@ -182,7 +182,7 @@ class Trainer:
 class MCTSWorker:
     def __init__(self, model):
         self.initialized = False
-        self.environment = HexGame(size=App.config("hex.size"))
+        self.environment = Hex(size=App.config("environment.size"))
         self.model = LiteModel.from_keras_model(model)
 
         if App.config("rl.use_cnn"):
@@ -243,7 +243,7 @@ class MCTSWorker:
 
 
 if __name__ == "__main__":
-    env = HexGame(size=App.config("hex.size"))
+    env = Hex(size=App.config("environment.size"))
 
     if App.config("rl.use_cnn"):
         network = CNN.build_from_config(input_shape=env.cnn_state.shape, output_size=len(env.legal_binary_moves))

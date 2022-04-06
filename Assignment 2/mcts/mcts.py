@@ -1,5 +1,6 @@
 from .node import Node
-from misc import StateManager, Move
+from environments import Environment
+from misc import Move
 from agents import Agent
 import random
 import numpy as np
@@ -13,29 +14,19 @@ logger.setLevel(App.config("mcts.log_level"))
 
 
 class MCTS:
-    def __init__(self, environment: StateManager, rollout_policy_agent: Agent = None, use_time_budget=False, time_budget=0.0, rollouts=0, c=1.0,
-                 epsilon=1.0):
+    def __init__(self, environment: Environment, rollout_policy_agent: Agent = None, use_time_budget=False, time_budget=0.0, searches=0, c=1.0, epsilon=1.0, **params):
         self.environment = environment
         self.root = Node(player=self.environment.current_player)
-
         self._agent = rollout_policy_agent
-
         self.use_time_budget = use_time_budget
         self.time_budget = time_budget
-        self.rollouts = rollouts
-
+        self.searches = searches
         self.c = c
         self.epsilon = epsilon
 
-        # TODO: Remove this
-        self.config = {
-            "use_time_budget": use_time_budget,
-            "rollouts": rollouts,
-            "time_budget": time_budget,
-            "c": c,
-            "rp_agent": rollout_policy_agent.__class__.__name__,
-            "epsilon": epsilon
-        }
+    @classmethod
+    def from_config(cls, environment: Environment, **params):
+        return cls(environment=environment, **App.config("mcts"), **params)
 
     """ POLICIES """
 
@@ -47,7 +38,7 @@ class MCTS:
         i = random.choice(max_ids)
         return nodes[i]
 
-    def _rollout_policy(self, environment: StateManager):
+    def _rollout_policy(self, environment: Environment):
         if random.random() <= self.epsilon or self._agent is None:
             return random.choice(environment.legal_moves)
         else:
@@ -66,7 +57,7 @@ class MCTS:
         start_time = time.time()
         rollouts = 0
 
-        while (time.time() - start_time < self.time_budget and self.use_time_budget) or (rollouts < self.rollouts and not self.use_time_budget):
+        while (time.time() - start_time < self.time_budget and self.use_time_budget) or (rollouts < self.searches and not self.use_time_budget):
             # Select a node to expend
             node, environment = self.selection(c=self.c)
 
@@ -98,7 +89,7 @@ class MCTS:
         return node, environment
 
     @staticmethod
-    def expand(node: Node, environment: StateManager):
+    def expand(node: Node, environment: Environment):
         """
         Generate the children nodes of the passed parent node, and add them to the tree
         """
@@ -115,7 +106,7 @@ class MCTS:
 
         return node, environment
 
-    def rollout(self, environment: StateManager):
+    def rollout(self, environment: Environment):
         """
         Simulate a game based on the rollout policy and return the winning player
         """

@@ -1,258 +1,368 @@
-import random
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 
-import matplotlib.pyplot as plt
+import ray
+import tensorflow as tf
+gpus = tf.config.list_physical_devices('GPU')
+for device in gpus:
+    tf.config.experimental.set_memory_growth(device, True)
+
+import wandb
+import time
 import numpy as np
-from tqdm import trange
-
-from agents import ANNAgent, MCTSAgent, CNNAgent
-from config import App
+import random
+from collections import deque
 from environments import Hex, HexGUI
-from mcts import MCTS
-from memory import Memory
 from networks import ANN, CNN
-from topp import TOPP
+from mcts import MCTS
+from agents import MCTSAgent, ANNAgent, CNNAgent, BufferAgent
+from misc import LiteModel
+from tensorflow.keras import Sequential
+from config import App
+from copy import deepcopy
 
 
-class ReinforcementLearning:
-    def __init__(self, games):
-        self.games = games
-        self.eps_decay = 0.05 ** (1. / self.games)
+class GameHistory:
+    def __init__(self):
+        self.result = 0
+        self.players = []
+        self.states = []
+        self.distributions = []
+        self.moves = []
+        self.flat_states = []
 
-        self.models = []
-        self.environment = Hex(size=7)
+    @property
+    def results(self):
+        return [self.result]*len(self.states)
 
-        """
-        self.network = ANN.build(
-            optimizer="adam",
-            activation="relu",
-            learning_rate=0.03,
-            input_size=len(self.environment.flat_state),
-            output_size=len(self.environment.legal_binary_moves),
-            hidden_size=(100, 100, 50),
+    def register_result(self, result):
+        self.result = result
+
+    def register_move(self, player, move, state, distribution, flat_state):
+        self.players.append(player)
+        self.states.append(state)
+        self.moves.append(move)
+        self.distributions.append(distribution)
+        self.flat_states.append(flat_state)
+
+    def stack(self):
+        memory = []
+        for i in range(len(self.states)):
+            player = self.players[i]
+            move = self.moves[i]
+            state = self.states[i]
+            distribution = self.distributions[i]
+            result = self.result
+            memory.append([player, move, state, distribution, result])
+        return memory
+
+
+@ray.remote
+class Storage:
+    def __init__(self):
+        self.data = {
+            "terminate": False,
+            "checkpoint": -1,
+            "epsilon": App.config("mcts.epsilon"),
+            "models": []
+        }
+
+    def get_info(self, key):
+        return self.data[key]
+
+    def set_info(self, key, value):
+        self.data[key] = value
+
+    def append_info(self, key, value):
+        if key in self.data:
+            self.data[key].append(value)
+        else:
+            self.data[key] = [value]
+
+    def all(self):
+        return self.data
+
+
+@ray.remote
+class Buffer:
+    def __init__(self):
+        self.buffer = deque([], maxlen=App.config("rbuf.queue_size"))
+        self.num_games = 0
+        self.num_tot_samples = 0
+
+    def store(self, game_history, storage):
+        self.buffer.append(game_history)
+        self.num_games += 1
+        self.num_tot_samples += len(game_history.flat_states)
+        storage.set_info.remote("num_games", self.num_games)
+        self._solid_save(game_history)
+
+    def get_batch(self, sample_size):
+        return np.random.choice(self.buffer, size=min(sample_size, len(self.buffer)), replace=False)
+
+    def get_all(self):
+        return list(self.buffer)
+
+    def get_num_tot_samples(self):
+        return self.num_tot_samples
+
+    def get_num_games(self):
+        return self.num_games
+
+    def get_game(self, i):
+        return self.buffer[i]
+
+    def _solid_save(self, game_history):
+        with open("cases/flat_states.txt", "ab") as f:
+            np.savetxt(f, game_history.flat_states)
+        with open("cases/distributions.txt", "ab") as f:
+            np.savetxt(f, game_history.distributions)
+        with open("cases/results.txt", "ab") as f:
+            np.savetxt(f, game_history.results)
+        with open("cases/moves.txt", "ab") as f:
+            np.savetxt(f, game_history.moves)
+        with open("cases/players.txt", "ab") as f:
+            np.savetxt(f, game_history.players)
+
+
+@ray.remote(num_cpus=1, num_gpus=len(gpus))
+class Trainer:
+    def __init__(self, network):
+        tf.debugging.set_log_device_placement(True)
+
+        self.network = network
+        self.initialized = False
+        self.training_step = 0
+        self.new_games_per_training = App.config("rl.new_games_per_training_step")
+        self.epochs = App.config("rl.epochs")
+        self.batch_size = App.config("rl.game_batch")
+        self.epsilon_decay = App.config("rl.epsilon_decay")
+
+        if App.config("rl.track"):
+            wandb.login()
+            wandb.init(project="hex", config={
+                "mcts": App.config("mcts"),
+                "cnn": App.config("cnn"),
+                "rl": App.config("rl")
+            })
+
+    def loop(self, storage, buffer):
+        # Metadata
+        max_training_steps = np.inf if App.config("rl.training_steps") is None else App.config("rl.training_steps")
+
+        # Initialize network weights in storage and set checkpoint
+        if not self.initialized:
+            self.initialize_ann(storage)
+
+        # Wait for the first data to be stored in storage
+        while ray.get(buffer.get_num_games.remote()) == 0:
+            time.sleep(2)
+
+        # While not terminated, run the training loop
+        while not ray.get(storage.get_info.remote("terminate")):
+            self.single_run(storage, buffer)
+
+            # Terminate process if training_steps is completed
+            if self.training_step >= max_training_steps:
+                storage.set_info.remote("terminate", True)
+
+            while (ray.get(buffer.get_num_games.remote()) / max(1, self.training_step)) < self.new_games_per_training:
+                time.sleep(0.5)
+
+    def single_run(self, storage, buffer):
+        # Metadata
+        epsilon = ray.get(storage.get_info.remote("epsilon"))
+        num_tot_samples = ray.get(buffer.get_num_tot_samples.remote())
+        num_games = ray.get(buffer.get_num_games.remote())
+        start_time = time.time()
+
+        # Load training and test data and create numpy arrays
+        train = ray.get(buffer.get_batch.remote(self.batch_size))
+        train_x, train_y = np.array(train[0].states), np.array(train[0].distributions)
+
+        for i in range(1, len(train)):
+            train_x = np.append(train_x, train[i].states, 0)
+            train_y = np.append(train_y, train[i].distributions, 0)
+
+        # Run training of network
+        self.training_step += 1
+        train_results = self.network.fit(
+            train_x.astype(np.float32),
+            train_y.astype(np.float32),
+            batch_size=len(train_x),
+            epochs=self.epochs
         )
-        """
 
-        self.network = CNN.build(
-            input_shape=self.environment.cnn_state.shape,
-            learning_rate=0.001,
-        )
-        self.mcts = MCTS(
-            rollout_policy_agent=CNNAgent(network=self.network),
-            environment=self.environment,
-            rollouts=1000,
-            time_budget=1,
-            epsilon=1,
-            verbose=True,
-            c=1.4
-        )
+        # Track results
+        if App.config("rl.track"):
+            wandb.log({
+                "accuracy": train_results.history["accuracy"][self.epochs - 1],
+                "loss": train_results.history["loss"][self.epochs - 1],
+                "kullback_leibler_divergence": train_results.history["kullback_leibler_divergence"][self.epochs - 1],
+                "samples": num_tot_samples,
+                "games": num_games,
+                "training_step": self.training_step,
+                "epsilon": epsilon,
+                "training_time": time.time() - start_time,
+            })
+
+        # Store weights, checkpoint and new epsilon
+        storage.set_info.remote("nn_weights", self.network.model.get_weights())
+        storage.set_info.remote("checkpoint", random.getrandbits(64))
+        storage.set_info.remote("epsilon", max(0.05, epsilon * App.config("rl.epsilon_decay")))
+
+        # Persist model
+        if self.training_step % App.config("rl.persist_model_per_training_step") == 0:
+            model_name = self.save(self.training_step)
+            storage.append_info.remote("models", model_name)
+
+    def save(self, episodes):
+        model_name = f"S{App.config('environment.size')}_B{episodes}"
+        return self.network.save_model(model_name)
+
+    def initialize_ann(self, storage):
+        weights = self.network.model.get_weights()
+        config = self.network.model.get_config()
+        storage.set_info.remote("nn_weights", weights)
+        storage.set_info.remote("nn_config", config)
+        storage.set_info.remote("checkpoint", random.getrandbits(64))
+        self.initialized = True
+        model_name = self.save(0)
+        storage.append_info.remote("models", model_name)
+
+
+@ray.remote(num_cpus=1)
+class MCTSWorker:
+    def __init__(self, model):
+        self.initialized = False
+        self.environment = Hex(size=App.config("environment.size"))
+        self.model = LiteModel.from_keras_model(model)
+
+        if App.config("rl.use_cnn"):
+            self.network = CNN(model=self.model)
+            self.network_agent = CNNAgent(environment=self.environment, network=self.network)
+        else:
+            self.network = ANN(model=self.model)
+            self.network_agent = ANNAgent(environment=self.environment, network=self.network)
+
+        self.checkpoint = None
+        self.state_fc = self.network_agent.state_fc
         self.agent = MCTSAgent(
             environment=self.environment,
-            model=self.mcts,
-        )
-        self.memory = Memory(
-            sample_size=0.5,
-            queue_size=10000,
-            verbose=False
+            mcts=MCTS.from_config(
+                environment=self.environment,
+                rollout_policy_agent=self.network_agent
+            )
         )
 
-    def run(self):
+    def loop(self, storage, buffer):
+        # Wait for the Trainer to initialize the weights
+        while ray.get(storage.get_info.remote("checkpoint")) == -1:
+            time.sleep(1)
+
+        # Render MCTS Workers
         if App.config("rl.visualize"):
-            gui = HexGUI(environment=self.environment)
-            gui.run_visualization_loop(lambda: self.train())
+            gui = HexGUI(height=400, width=400, environment=self.environment)
+            gui.run_visualization_loop(lambda: self._loop(storage, buffer))
         else:
-            self.train()
+            self._loop(storage, buffer)
 
+    def _loop(self, storage, buffer):
+        # Main loop, run until terminated
+        while not ray.get(storage.get_info.remote("terminate")):
+            checkpoint = ray.get(storage.get_info.remote("checkpoint"))
+            self.updates_model_and_hyper_params(storage, checkpoint)
+            self.single_run(storage, buffer)
 
-    def pre_train(self):
-        pass
+    def single_run(self, storage, buffer):
+        self.environment.reset()
+        game_history = GameHistory()
 
+        while not self.environment.is_game_over:
+            move, distribution = self.agent.get_move(greedy=False)
 
-    def train(self):
-        # Save model before training
+            # Metadata
+            size = self.environment.size
+            rotated_move = (size - 1 - move[0], size - 1 - move[1])
+            flat_state = self.environment.flat_state
+            rotated_flat_state = [flat_state[0], *flat_state[:0:-1]]
 
-        self.save_model(0)
-
-        with trange(1, self.games + 1) as t:
-            for i in t:
-
-                t.set_description(f"Game {i}")
-                self.environment.reset()
-
-                while not self.environment.is_game_over:
-                    # Run MCTS
-                    best_move, distribution = self.agent.get_move(greedy=True)
-
-                    # Add state and distribution to memory
-                    self.memory.register_state_and_distribution(self.environment.cnn_state, distribution)
-
-                    # Add rotated state and distribution to memory
-                    if random.random() > 0.5:
-                        self.memory.register_state_and_distribution(self.environment.rotated_cnn_state, distribution[::-1])
-
-                    # Play the move
-                    self.environment.play(best_move)
-
-                # Register result of game in memory
-                self.memory.register_result(self.environment.result)
-
-                # Train actor on memory
-                print(self.network.train_on_batch(*self.memory.sample()))
-
-                if i % 5 == 0:
-                    self.save_model(i)
-
-                # Epsilon decay
-                self.mcts.epsilon *= self.eps_decay
-
-        self.check_models()
-
-    def save_model(self, i):
-        model_name = lambda size, batch: f"S{size}_B{i}"
-        self.models.append(
-            self.network.save_model(suffix=model_name(self.environment.size, self.games))
-        )
-
-    def check_models(self):
-        environment = self.environment.copy()
-        environment.reset()
-
-        topp = TOPP(environment=environment)
-
-        for filename in self.models:
-            topp.add_agent(
-                filename,
-                ANNAgent(environment=environment, network=ANN.from_file(filename))
+            # Save normal state
+            game_history.register_move(
+                self.environment.current_player,
+                move,
+                self.state_fc(self.environment, rotate=False),
+                distribution,
+                flat_state
             )
 
-        print(topp.tournament(100))
+            # Save rotated state
+            game_history.register_move(
+                self.environment.current_player,
+                rotated_move,
+                self.state_fc(self.environment, rotate=True),
+                distribution[::-1],
+                rotated_flat_state
+            )
+
+            # Execute the move in the environment
+            self.environment.play(move)
+
+        # Store the game history in the buffer
+        buffer.store.remote(game_history, storage)
+
+    def updates_model_and_hyper_params(self, storage, checkpoint):
+        if checkpoint != self.checkpoint:
+            weights = ray.get(storage.get_info.remote("nn_weights"))
+            config = ray.get(storage.get_info.remote("nn_config"))
+            epsilon = ray.get(storage.get_info.remote("epsilon"))
+
+            seq_model = Sequential.from_config(config)
+            seq_model.set_weights(weights)
+
+            self.model.update_keras_model(seq_model)
+            self.checkpoint = checkpoint
+            self.agent.mcts.epsilon = epsilon
 
 
-if __name__ == "__main__":
-    #rl = ReinforcementLearning(games=200)
-    #rl.run()
+class ReinforcementLearner:
+    def __init__(self):
+        ray.init(num_cpus=4)
+        self.environment = Hex(size=App.config("environment.size"))
+        self.saved_models = []
 
-    def ann_preprocessing():
-        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_new2/train_samples"
-        states = np.loadtxt(filename + '_states.txt', dtype=np.int32)
-        dists = np.loadtxt(filename + '_dists.txt', dtype=np.float32)
+        if App.config("rl.use_cnn"):
+            self.network = CNN.build_from_config(
+                input_shape=self.environment.cnn_state.shape,
+                output_size=len(self.environment.legal_binary_moves))
+        else:
+            self.network = ANN.build_from_config(
+                input_size=len(self.environment.ann_state),
+                output_size=len(self.environment.legal_binary_moves)
+            )
 
-        dict = {0: 0, 1: 1, -1: 2}
-        bits = lambda s: format(dict[s], f"0{2}b")
-        new_states = np.zeros((states.shape[0], 100))
+        ts = App.config("rl.training_steps")
+        self.training_steps = np.inf if ts is None else ts
+        self.buffer = Buffer.remote()
+        self.storage = Storage.remote()
+        self.trainer = Trainer.remote(self.network)
+        self.workers = [MCTSWorker.remote(self.network.model) for _ in range(2)]
+        self.gui = None
 
-        for i in range(len(states)):
-            new_states[i] = np.array([float(s) for s in list(''.join([bits(s) for s in states[i]]))])
+    def run(self):
+        # Run trainer loop
+        self.trainer.loop.remote(self.storage, self.buffer)
 
-        return new_states.astype(np.int32), dists
+        # Run worker loop
+        for worker in self.workers:
+            worker.loop.remote(self.storage, self.buffer)
 
-    def preprocessing():
-        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_new2/train_samples"
-        states = np.loadtxt(filename + '_states.txt', dtype=np.float32)
-        dists = np.loadtxt(filename + '_dists.txt', dtype=np.float32)
-        transpose_players = (states[:, 0] == -1)
+        while not ray.get(self.storage.get_info.remote("terminate")):
+            time.sleep(10)
+            samples = ray.get(self.buffer.get_num_tot_samples.remote())
+            print(f"Num samples: {samples}")
 
-        # State preprocessing
-        flat_states = states[:, 1:].reshape((states.shape[0], 7, 7))
-        flat_states[transpose_players] = np.transpose(flat_states[transpose_players], axes=(0, 2, 1)) * -1
-        flat_states = np.array([flat_states == 1, flat_states == -1, flat_states == 0], dtype=np.float32)
-        flat_states = np.moveaxis(flat_states, 0, 3)
+        self.saved_models = ray.get(self.storage.get_info.remote("models"))
 
-        # Dists preprocessing
-        dists = dists.reshape((dists.shape[0], 7, 7))
-        dists[transpose_players] = np.transpose(dists[transpose_players], axes=(0, 2, 1))
-        dists = dists.reshape((dists.shape[0], 49))
-
-        return flat_states, dists
-
-    def preprocessing_new():
-        filename = "/Users/daniel/Documents/AIProg/Assignments/Assignment 2/cases/r_5000_new2/train_samples"
-        states = np.loadtxt(filename + '_states.txt')
-        dists = np.loadtxt(filename + '_dists.txt')
-
-        player1 = (states[:, 0] == 1)
-        player2 = (states[:, 0] == -1)
-
-        # State preprocessing
-        flat_states = states[:, 1:].reshape((states.shape[0], 7, 7))
-        #flat_states[transpose_players] = np.transpose(flat_states[transpose_players], axes=(0, 2, 1)) * -1
-        flat_states = np.array([flat_states == 1, flat_states == -1, flat_states == 0, np.zeros((states.shape[0], 7, 7)), np.zeros((states.shape[0], 7, 7))], dtype=np.float32)
-        flat_states = np.moveaxis(flat_states, 0, 3)
-        flat_states[player1, :, :, 3] = 1
-        flat_states[player2, :, :, 4] = 1
-
-        # Dists preprocessing
-        #dists = dists.reshape((dists.shape[0], 7, 7))
-        #dists[transpose_players] = np.transpose(dists[transpose_players], axes=(0, 2, 1))
-        #dists = dists.reshape((dists.shape[0], 49))
-
-        return flat_states, dists
-
-
-    transpose = True
-    states, dists = preprocessing()
-    #states, dists = preprocessing_new()
-    #states, dists = ann_preprocessing()
-
-    env = Hex(size=7)
-    """
-    ann = ANN.build(
-        learning_rate=0.001,
-        input_size=len(states[0]),
-        hidden_size=(200, 100, 50),
-        output_size=len(env.legal_binary_moves),
-        activation="relu",
-        optimizer="adam"
-
-    )
-    """
-    cnn = CNN.build_from_config(input_shape=env.cnn_state.shape, output_size=len(env.legal_binary_moves))
-
-    # Shuffle the data
-    idx = np.random.permutation(len(states))
-    states = states[idx]
-    dist = dists[idx]
-
-    # Train, test split
-    #X_train, X_test, y_train, y_tes = train_test_split(states, dists, test_size=0.1, shuffle=True)
-
-    #train_dataset = tf.data.Dataset.from_tensor_slices((states, dists)).shuffle(80000).batch(256)
-    #test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_tes)).batch(256)
-
-    # Plotting
-    train_accuracies = []
-    train_loss = []
-
-    fig = plt.figure(figsize=(12, 5))
-    gs = fig.add_gridspec(1, 2)
-    ax1 = fig.add_subplot(gs[0, 0])
-    ax1.set_title("Accuracy")
-    ax2 = fig.add_subplot(gs[0, 1])
-    ax2.set_title("Loss")
-
-    i = 0
-    for i in range(500):
-        # Generate sample
-        idx = np.arange(states.shape[0])
-        batch_idx = np.random.choice(idx, 500, replace=False)
-
-        result = cnn.fit(states[batch_idx], dists[batch_idx], epochs=10, batch_size=500)
-        #result = cnn.train_on_batch(states[batch_idx], dists[batch_idx], None)
-
-        loss = result.history["loss"][9]
-        acc = result.history["accuracy"][9]
-
-        train_accuracies.append(acc)
-        train_loss.append(loss)
-        print(f"Epoch {i}, loss: {loss}, acc: {acc}")
-
-        i += 1
-
-        if i % 20 == 0:
-            x = np.arange(len(train_accuracies))
-            ax1.plot(x, train_accuracies, color='tab:green', label="Train")
-            ax2.plot(x, train_loss, color='tab:orange', label="Train")
-            plt.show(block=False)
-            plt.pause(0.001)
-
-    plt.show()
-    #cnn.save_model(f"sample_r5000_l{env.cnn_state.shape[2]}_T{transpose}")
+        ray.shutdown()
+        print("Completed")

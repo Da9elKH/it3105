@@ -72,18 +72,14 @@ class HexGUI(arcade.Window):
     def run_visualization_loop(self, function: Callable):
         self.visualization_loop = function
 
-        # Change the default menu to fit that it is inside a visualization loop
-        unused_buttons = []
-        for element in self.v_box.children:
-            if element.children[0].text == "Autoplay":
-                element.children[0].text = "Run"
-            else:
-                unused_buttons.append(element)
-        for element in unused_buttons:
-            self.v_box.remove(element)
+        def scheduled_function(delta_time):
+            function()
+            arcade.unschedule(scheduled_function)
+            self.close()
 
-        self.manager.children[0][0].align_y = -self.height / 2 + 25*len(self.v_box.children)
+        self.manager = None
         self.draw_board()
+        arcade.schedule(scheduled_function, 1)
         self.run()
 
     def on_draw(self):
@@ -123,7 +119,7 @@ class HexGUI(arcade.Window):
         if self._agent is None:
             self._agent = deepcopy(self.agent)
 
-        if self.agent and not self.environment.is_game_over and self.environment.current_player == -1:
+        if self.agent and not self.environment.is_game_over:
             action, dist = self.agent.get_move(greedy=True)
             if dist is not None:
                 size = (self.environment.size, self.environment.size)
@@ -150,8 +146,9 @@ class HexGUI(arcade.Window):
             )
 
         self.renderer.draw()
-        self.manager.draw()
 
+        if self.manager:
+            self.manager.draw()
         if self.environment.is_game_over:
             self.draw_winner_line()
 
@@ -380,6 +377,7 @@ class StateRendering:
                     center=(center_x, center_y),
                     radius=self._r,
                 )
+
 
 # TODO: REMOVE THIS (?)
 if __name__ == "__main__":

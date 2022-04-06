@@ -1,5 +1,13 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = "2"
+
 import ray
 ray.init(num_cpus=32, num_gpus=2)
+
+import tensorflow as tf
+gpus = tf.config.list_physical_devices('GPU')
+for device in gpus:
+    tf.config.experimental.set_memory_growth(device, True)
 
 import wandb
 import time
@@ -13,11 +21,6 @@ from agents import MCTSAgent, ANNAgent, CNNAgent
 from misc import LiteModel
 from tensorflow.keras import Sequential
 from config import App
-
-import tensorflow as tf
-physical_devices = tf.config.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
-tf.config.experimental.set_memory_growth(physical_devices[1], True)
 
 
 class GameHistory:
@@ -130,7 +133,7 @@ class Buffer:
             np.savetxt(f, game_history.players)
 
 
-@ray.remote(num_gpus=1, num_cpus=2)
+@ray.remote(num_gpus=2, num_cpus=1)
 class Trainer:
     def __init__(self, network):
         tf.debugging.set_log_device_placement(True)

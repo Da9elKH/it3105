@@ -1,10 +1,11 @@
 import logging
 
-from agents import CNNAgent
+from agents import CNNAgent, ANNAgent
 from config import App
 from environments import Hex, HexGUI
-from networks import CNN
+from networks import CNN, ANN
 from oht import OHT
+from rl import ReinforcementLearner
 from topp import TOPP
 
 
@@ -24,24 +25,32 @@ def setup_logger():
 
 def run():
     environment = Hex(size=App.config("environment.size"))
+    models = []
 
     for task in App.config("run"):
-
         # REINFORCEMENT LEARNING
         if task == "RL":
-            exec(open("rl.py").read())
+            print("RL STARTED")
+            rl = ReinforcementLearner()
+            rl.run()
+            models = rl.saved_models
 
         # TOURNAMENT OF PROGRESSIVE POLICIES
         elif task == "TOPP":
+            print("TOPP STARTED")
             topp = TOPP(environment=environment)
             matches = App.config("topp.matches")
 
-            # TODO: Only add these when at TOPP
-            topp.add_agent("0", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B0.h5")))
-            topp.add_agent("75", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B75.h5")))
-            topp.add_agent("150", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B150.h5")))
-            topp.add_agent("225", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B225.h5")))
-            topp.add_agent("300", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B300.h5")))
+            if models:
+                for model in models:
+                    agent, network = (CNNAgent, CNN) if App.config("rl.use_cnn") else (ANNAgent, ANN)
+                    topp.add_agent(model, agent(environment=environment, network=network.from_file(model)))
+            else:
+                topp.add_agent("0", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B0.h5")))
+                topp.add_agent("75", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B75.h5")))
+                topp.add_agent("150", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B150.h5")))
+                topp.add_agent("225", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B225.h5")))
+                topp.add_agent("300", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B300.h5")))
 
             if App.config("topp.visualize"):
                 gui = HexGUI(environment=environment)

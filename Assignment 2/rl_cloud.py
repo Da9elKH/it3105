@@ -133,6 +133,8 @@ class Buffer:
 @ray.remote(num_gpus=1, num_cpus=2)
 class Trainer:
     def __init__(self, network):
+        tf.debugging.set_log_device_placement(True)
+
         self.network = network
         self.initialized = False
         self.training_step = 0
@@ -141,7 +143,6 @@ class Trainer:
         self.batch_size = App.config("rl.game_batch")
         self.epsilon_decay = App.config("rl.epsilon_decay")
 
-        tf.debugging.set_log_device_placement(True)
         wandb.login()
         wandb.init(project="hex", config={
             "mcts": App.config("mcts"),
@@ -149,10 +150,10 @@ class Trainer:
             "rl": App.config("rl")
         })
 
-    def get_training_steps(self):
-        return self.training_step
-
     def loop(self, storage, buffer):
+        # Metadata
+        max_training_steps = np.inf if App.config("rl.training_steps") is None else App.config("rl.training_steps")
+
         # Initialize network weights in storage and set checkpoint
         if not self.initialized:
             self.initialize_ann(storage)
@@ -164,6 +165,11 @@ class Trainer:
         # While not terminated, run the training loop
         while not ray.get(storage.get_info.remote("terminate")):
             self.single_run(storage, buffer)
+
+            # Terminate process if training_steps is completed
+            if self.training_step >= max_training_steps:
+                storage.set_info.remote("terminate", True)
+
             while (ray.get(buffer.get_num_games.remote()) / max(1, self.training_step)) < self.new_games_per_training:
                 time.sleep(0.5)
 
@@ -327,7 +333,7 @@ class MCTSWorker:
 
             self.model.update_keras_model(seq_model)
             self.checkpoint = checkpoint
-            self.mcts.epsilon = epsilon
+            self.agent.mcts.epsilon = epsilon
 
 
 if __name__ == "__main__":
@@ -348,7 +354,7 @@ if __name__ == "__main__":
     buffer = Buffer.remote()
     storage = Storage.remote()
     trainer = Trainer.remote(network)
-    workers = [MCTSWorker.remote(env.size, network.model) for _ in range(28)]
+    workers = [MCTSWorker.remote(network.model) for _ in range(28)]
 
     # Run loops
     trainer.loop.remote(storage, buffer)
@@ -358,10 +364,8 @@ if __name__ == "__main__":
     training_steps = App.config("rl.training_steps")
     training_steps = np.inf if training_steps is None else training_steps
 
-    while True:
-        if ray.get(trainer.get_training_steps.remote()) >= training_steps:
-            storage.set_info.remote("terminate", True)
-            break
-        else:
-            time.sleep(10)
-            print(f"Num samples: {ray.get(buffer.get_num_tot_samples.remote())}")
+    while not ray.get(storage.get_info.remote("terminate")):
+        time.sleep(10)
+        print(f"Num samples: {ray.get(buffer.get_num_tot_samples.remote())}")
+
+    print("Completed")

@@ -1,11 +1,10 @@
 from config import App
+from environments import HexGame, HexGUI
+from agents import ANNAgent, CNNAgent
+from networks import CNN, ANN
+from topp import TOPP
+from oht import OHT
 import logging
-import random
-
-
-def defaults():
-    pass
-    #random.seed(1)
 
 
 def setup_logger():
@@ -23,16 +22,43 @@ def setup_logger():
 
 
 def run():
+    environment = HexGame(size=App.config("hex.size"))
+
     for task in App.config("run"):
+
+        # REINFORCEMENT LEARNING
         if task == "RL":
             exec(open("rl.py").read())
+
+        # TOURNAMENT OF PROGRESSIVE POLICIES
         elif task == "TOPP":
-            exec(open("topp.py").read())
+            topp = TOPP(environment=environment)
+            matches = App.config("topp.matches")
+
+            # TODO: Only add these when at TOPP
+            topp.add_agent("0", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B0.h5")))
+            topp.add_agent("75", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B75.h5")))
+            topp.add_agent("150", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B150.h5")))
+            topp.add_agent("225", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B225.h5")))
+            topp.add_agent("300", CNNAgent(environment=environment, network=CNN.from_file("5x5/(1) CNN_S5_B300.h5")))
+
+            if App.config("topp.visualize"):
+                gui = HexGUI(environment=environment)
+                gui.run_visualization_loop(lambda: topp.tournament(matches))
+            else:
+                topp.tournament(matches)
+
+        # ONLINE HEX TOURNAMENT
         elif task == "OHT":
-            exec(open("oht.py").read())
+            oht = OHT(auth=App.config("oht.auth"), qualify=App.config("oht.qualify"), environment=environment)
+
+            if App.config("oht.visualize"):
+                gui = HexGUI(environment=environment)
+                gui.run_visualization_loop(lambda: oht.run(mode=App.config("oht.mode")))
+            else:
+                oht.run(mode=App.config("oht.mode"))
 
 
 if __name__ == "__main__":
-    defaults()
     setup_logger()
     run()

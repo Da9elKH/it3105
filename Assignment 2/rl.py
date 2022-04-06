@@ -1,16 +1,14 @@
-from agents import ANNAgent, MCTSAgent, CNNAgent, RandomAgent, BufferAgent
-from mcts import MCTS
+from agents import ANNAgent, MCTSAgent, CNNAgent
 from environments import HexGame, HexGUI
 from networks import ANN, CNN
 from memory import Memory
 from tqdm import trange
 from topp import TOPP
+from mcts import MCTS
 from config import App
-from sklearn.model_selection import train_test_split
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-import tensorflow as tf
 
 
 class ReinforcementLearning:

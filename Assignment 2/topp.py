@@ -1,12 +1,12 @@
-from agents import Agent, ANNAgent, CNNAgent, MCTSAgent, RandomAgent
-from networks import ANN, CNN
-from mcts import MCTS
+from agents import Agent
 from misc import StateManager
-from environments import HexGame, HexGUI
 from tqdm import trange
 from itertools import permutations
 from typing import Dict
-from config import App
+from tabulate import tabulate
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sbn
 
 
 class TOPP:
@@ -14,13 +14,17 @@ class TOPP:
         self.environment = environment
         self.agents: Dict[str, Agent] = {}
         self.stats: Dict[str, Dict[str, int]] = {}
+        self.stats_idx = {}
 
     def add_agent(self, name: str, agent: Agent):
         self.agents[name] = agent
         self.stats[name] = {"W": 0, "L": 0}
+        self.stats_idx[name] = len(self.agents) - 1
 
     def tournament(self, rounds=50):
+        stats = np.zeros(shape=(len(self.agents),) * 2, dtype=np.int32)
         battles = list(permutations(self.agents.keys(), 2))
+        id_transform = lambda x: tuple([self.stats_idx[name] for name in x])
 
         with trange(len(battles)) as t:
             for i in t:
@@ -31,12 +35,13 @@ class TOPP:
 
                 for _ in range(rounds):
                     result, winner = self.run_game(players)
+                    stats[id_transform(battles[i])[::result]] += 1
 
                     # Save stats for this game
                     self.stats[players[winner]]["W"] += 1
                     self.stats[players[winner*(-1)]]["L"] += 1
 
-        return self.stats
+        self.print_stats(stats, rounds)
 
     def run_game(self, players: Dict[int, str]):
         self.environment.reset()
@@ -45,25 +50,19 @@ class TOPP:
             self.environment.play(move)
         return self.environment.result, self.environment.current_player
 
+    def print_stats(self, stats, rounds):
+        info = {"Agents": list(self.agents.keys()), **{name: [] for name in self.agents.keys()}, "LOSS": []}
+        for key_1, idx_1 in self.stats_idx.items():
+            for key_2, idx_2 in self.stats_idx.items():
+                info[key_1].append(stats[(idx_1, idx_2)])
 
-if __name__ == "__main__":
+        info["Agents"].append("WINS")
+        for key, value in self.stats.items():
+            info[key].append(f"({value['W']})")
+            info["LOSS"].append(f"({value['L']})")
 
-    environment = HexGame(size=7)
-    topp = TOPP(environment=environment)
-    topp.add_agent("random", RandomAgent(environment=environment))
-    #topp.add_agent("ann20", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B20.h5")))
-    #topp.add_agent("ann40", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B40.h5")))
-    #topp.add_agent("ann60", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S4_B60.h5")))
-    #topp.add_agent("ann40697", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S7_B40697.h5")))
-    #topp.add_agent("ann51356", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S7_B51356.h5")))
-    #topp.add_agent("ann22900", ANNAgent(environment=environment, network=ANN.from_file("(1) ANN_S7_B22900.h5")))
-    #topp.add_agent("cnn0", CNNAgent(environment=environment, network=CNN.from_file("(1) CNN_S7_B0.h5")))
-    #topp.add_agent("cnn252", CNNAgent(environment=environment, network=CNN.from_file("(1) CNN_S7_B252.h5")))
-    #topp.add_agent("cnn1533", CNNAgent(environment=environment, network=CNN.from_file("(1) CNN_S7_B1533.h5")))
-    topp.add_agent("cnn1638", CNNAgent(environment=environment, network=CNN.from_file("(1) CNN_S7_B1638.h5")))
+        print("\n---- TOPP STATISTICS ----\n")
+        print(tabulate(info, headers='keys'))
 
-    if App.config("topp.visualize") and False:
-        gui = HexGUI(environment=environment)
-        gui.run_visualization_loop(lambda: print(topp.tournament(25)))
-    else:
-        print(topp.tournament(100))
+        sbn.heatmap(stats/(2*rounds), xticklabels=list(self.agents.keys()), yticklabels=list(self.agents.keys()), annot=True)
+        plt.show()

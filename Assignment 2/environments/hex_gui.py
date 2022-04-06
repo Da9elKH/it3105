@@ -3,12 +3,11 @@ import arcade
 import arcade.gui
 import networkx as nx
 import math
-from agents import Agent, BufferAgent
+from agents import Agent
 from copy import deepcopy
 from environments import HexGame, PLAYERS
 from misc import Move
 from typing import Callable
-from time import sleep
 import numpy as np
 
 RED_COLOR = "fc766a"
@@ -41,17 +40,17 @@ class HexGUI(arcade.Window):
         self.manager.enable()
         self.v_box = arcade.gui.UIBoxLayout()
 
-        replay_button = arcade.gui.UIFlatButton(text="Reset", width=100, height=30)
-        autoplay_button = arcade.gui.UIFlatButton(text="Autoplay", width=100, height=30)
+        reset_button = arcade.gui.UIFlatButton(text="Reset", width=100, height=30)
         next_button = arcade.gui.UIFlatButton(text="Next", width=100, height=30)
+        autoplay_button = arcade.gui.UIFlatButton(text="Autoplay", width=100, height=30)
 
+        self.v_box.add(reset_button.with_space_around(bottom=20))
         self.v_box.add(next_button.with_space_around(bottom=20))
-        self.v_box.add(replay_button.with_space_around(bottom=20))
         self.v_box.add(autoplay_button.with_space_around(bottom=20))
 
-        replay_button.on_click = self.reset
-        autoplay_button.on_click = self.autoplay
+        reset_button.on_click = self.reset
         next_button.on_click = self.next_move
+        autoplay_button.on_click = self.autoplay
 
         self.manager.add(
             arcade.gui.UIAnchorWidget(
@@ -70,6 +69,19 @@ class HexGUI(arcade.Window):
 
     def run_visualization_loop(self, function: Callable):
         self.visualization_loop = function
+
+        # Change the default menu to fit that it is inside a visualization loop
+        unused_buttons = []
+        for element in self.v_box.children:
+            if element.children[0].text == "Autoplay":
+                element.children[0].text = "Run"
+            else:
+                unused_buttons.append(element)
+        for element in unused_buttons:
+            self.v_box.remove(element)
+
+        self.manager.children[0][0].align_y = -self.height / 2 + 25*len(self.v_box.children)
+        self.draw_board()
         self.run()
 
     def on_draw(self):
@@ -367,10 +379,11 @@ class StateRendering:
                     radius=self._r,
                 )
 
+# TODO: REMOVE THIS (?)
 if __name__ == "__main__":
     from agents import CNNAgent
     from networks import CNN
 
     env = HexGame(size=7)
-    gui = HexGUI(environment=env, agent=CNNAgent(environment=env, network=CNN.from_file("(1) CNN_S7_B1533.h5")))
+    gui = HexGUI(environment=env, agent=CNNAgent(environment=env, network=CNN.from_file("7x7/(1) CNN_S7_B1533.h5")))
     gui.run()

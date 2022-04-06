@@ -1,24 +1,16 @@
 from ActorClient import ActorClient
-from agents import RandomAgent, MCTSAgent, CNNAgent, ANNAgent
-from environments import HexGame, HexGUI
-from networks import CNN, ANN
+from agents import CNNAgent
+from environments import HexGame
+from networks import CNN
 from config import App
-from mcts import MCTS
 import numpy as np
 
 
 class OHT(ActorClient):
-    def __init__(self, auth, qualify):
+    def __init__(self, auth, qualify, environment=None):
         super().__init__(auth=auth, qualify=qualify)
-        self.environment = HexGame(size=7)
+        self.environment = environment if environment else HexGame(size=App.config("hex.size"))
         self.agent = CNNAgent(environment=self.environment, network=CNN.from_file(App.config("oht.agent")))
-
-    def run(self, mode='qualifiers'):
-        if App.config("oht.visualize"):
-            gui = HexGUI(environment=self.environment)
-            gui.run_visualization_loop(lambda: super(OHT, self).run(mode))
-        else:
-            super(OHT, self).run(mode)
 
     def handle_game_start(self, start_player):
         player = {1: 1, 2: -1}
@@ -42,8 +34,3 @@ class OHT(ActorClient):
 
     def handle_game_over(self, winner, end_state):
         super().handle_game_over(winner, end_state)
-
-
-if __name__ == "__main__":
-    oa = OHT(auth=App.config("oht.auth"), qualify=App.config("oht.qualify"))
-    oa.run(mode=App.config("oht.mode"))

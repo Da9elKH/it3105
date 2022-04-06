@@ -1,19 +1,15 @@
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense, Conv2D, BatchNormalization, Flatten, Input, add, ReLU, Softmax, ZeroPadding2D
-from tensorflow.keras import layers
+from tensorflow.keras import Sequential, layers
+from tensorflow.keras.layers import Conv2D, BatchNormalization, Flatten, Input, Softmax
 from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.models import load_model
 from tensorflow.keras.models import Model
 from tensorflow.keras.activations import get as activation_get
 from tensorflow.keras.optimizers import get as optimizer_get
 from tensorflow.keras.regularizers import l2
-
 from misc import LiteModel
 from os import path
 from typing import Tuple
 from config import App
-
 import numpy as np
 
 
@@ -72,22 +68,13 @@ class CNN:
 
         model = Sequential()
         model.add(Input(shape=input_shape))
-        model.add(Conv2D(
-            filters=hidden_layers[0],
-            kernel_size=(5, 5),
-            kernel_regularizer=l2(reg_const),
-            padding='same',
-            data_format="channels_last",
-            name="conv_0")
-        )
-        model.add(BatchNormalization(axis=1, name="batch_0"))
-        model.add(layers.Activation(act_fn, name="act_0"))
 
         # Convolutional layers
-        for i in range(1, len(hidden_layers)):
+        for i in range(0, len(hidden_layers)):
+            kernel_size = (5, 5) if i == 0 else (3, 3)
             model.add(Conv2D(
                 filters=hidden_layers[i],
-                kernel_size=(3, 3),
+                kernel_size=kernel_size,
                 kernel_regularizer=l2(reg_const),
                 padding='same',
                 data_format="channels_last",
@@ -106,12 +93,6 @@ class CNN:
             name=f"conv_{len(hidden_layers)}")
         )
         model.add(Flatten(name=f"flat_{len(hidden_layers)}"))
-        #model.add(Dense(
-        #    output_size,
-        #    activation="softmax",
-        #    name=f"dense_{len(hidden_layers)}",
-        #    kernel_regularizer=l2(reg_const))
-        #)
         model.add(Softmax())
         model.compile(loss=CategoricalCrossentropy(), optimizer=opt, metrics=["accuracy", "KLDivergence"])
 

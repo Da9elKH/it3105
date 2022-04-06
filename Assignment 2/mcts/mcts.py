@@ -27,6 +27,7 @@ class MCTS:
         self.c = c
         self.epsilon = epsilon
 
+        # TODO: Remove this
         self.config = {
             "use_time_budget": use_time_budget,
             "rollouts": rollouts,
@@ -57,10 +58,15 @@ class MCTS:
     """ PROCESSES """
 
     def search(self):
-        start_time = time.time()
-        num_rollouts = 0
+        """
+        Run a search loop with given parameters to select, expand, rollout and backup
+        the Monte-Carlo Search Tree.
+        """
 
-        while (time.time() - start_time < self.time_budget and self.use_time_budget) or (num_rollouts < self.rollouts and not self.use_time_budget):
+        start_time = time.time()
+        rollouts = 0
+
+        while (time.time() - start_time < self.time_budget and self.use_time_budget) or (rollouts < self.rollouts and not self.use_time_budget):
             # Select a node to expend
             node, environment = self.selection(c=self.c)
 
@@ -72,9 +78,9 @@ class MCTS:
 
             # Backup the results
             self.backup(node, winner)
-            num_rollouts += 1
+            rollouts += 1
 
-        logger.debug(f"Ran {num_rollouts} rollouts in {time.time() - start_time} seconds")
+        logger.debug(f"Ran {rollouts} rollouts in {time.time() - start_time} seconds")
 
     def selection(self, c=1.0):
         """
@@ -135,6 +141,9 @@ class MCTS:
 
     @property
     def distribution(self):
+        """
+        This property gives the distribution of visit counts from the current root node of the tree
+        """
         node_action_distribution = self.root.distribution()
         dist = np.zeros_like(self.environment.legal_binary_moves, dtype=np.float32)
 
@@ -142,31 +151,39 @@ class MCTS:
             index = self.environment.transform_move_to_binary_move_index(k)
             dist[index] = v
 
-        # Normalize the distribution
-        # dist /= sum(dist)
-        # MOVED TO MCTS-AGENT
-
         return dist
 
     def move(self, move: Move):
+        """
+        Register a move that has been taken on an external environment, to syncronize the
+        tree to a new root node.
+        """
+
         # Find or set new root node based on move
         if move in self.root.children:
             self.root = self.root.children[move]
         else:
-            logger.debug(f"Child node {move} not when moving root")
+            logger.debug(f"Child node {move} not present when taking a environment move")
             self.root = Node(move=move, player=self.environment.current_player)
 
         # Update the parent to be none.
         self.root.parent = None
 
     def reset(self):
+        """
+        Reset the tree to a node without any parent and children, and with the current player
+        of the state that has been reset.
+        """
         logger.debug("Reset MCTS to new node")
         self.root = Node(player=self.environment.current_player)
 
     def draw(self, only_visited=True):
+        """
+        Draw the tree from the current root node
+        """
+
         dot = graphviz.Digraph('G', filename='MCTS.gv')
         queue = [self.root]
-
         dot.node(str(id(self.root)), "N: %d\nQ: %d\n P:%d" % (self.root.N, self.root.Q, self.root.player))
 
         while queue:

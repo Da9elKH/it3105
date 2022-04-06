@@ -1,18 +1,18 @@
-from tensorflow.keras import Sequential, layers
-from tensorflow.keras.layers import Conv2D, BatchNormalization, Flatten, Input, Softmax
-from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.models import load_model
-from tensorflow.keras.models import Model
-from tensorflow.keras.activations import get as activation_get
-from tensorflow.keras.optimizers import get as optimizer_get
-from tensorflow.keras.regularizers import l2
-from misc import LiteModel
 from os import path
 from typing import Tuple
-from config import App, ROOT_DIR
-from pathlib import Path
-import numpy as np
 
+import numpy as np
+from tensorflow.keras import Sequential, layers
+from tensorflow.keras.activations import get as activation_get
+from tensorflow.keras.layers import Conv2D, BatchNormalization, Flatten, Input, Softmax
+from tensorflow.keras.losses import CategoricalCrossentropy
+from tensorflow.keras.models import Model
+from tensorflow.keras.models import load_model
+from tensorflow.keras.optimizers import get as optimizer_get
+from tensorflow.keras.regularizers import l2
+
+from config import App, ROOT_DIR
+from misc import LiteModel
 
 MODELS_FOLDER = f"{ROOT_DIR}/models/"
 

@@ -1,4 +1,4 @@
-from environments.environment import ProblemEnvironment
+from environment import ProblemEnvironment
 from utils.state import StateConstructor, State
 from utils.types import Action, ActionList
 import random

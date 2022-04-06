@@ -1,2 +1,2 @@
-from .cnn import CNN
 from .ann import ANN
+from .cnn import CNN

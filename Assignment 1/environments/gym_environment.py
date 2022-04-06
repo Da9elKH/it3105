@@ -1,4 +1,4 @@
-from environments.environment import ProblemEnvironment
+from environment import ProblemEnvironment
 import gym
 from utils.state import State, StateConstructor
 from utils.types import Action, ActionList

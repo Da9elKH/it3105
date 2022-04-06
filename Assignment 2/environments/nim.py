@@ -1,8 +1,11 @@
-from environments.environment import Environment
-from misc.types import Move
 from copy import deepcopy, copy
-import numpy as np
 from typing import List
+
+import numpy as np
+
+from environment import Environment
+from misc.types import Move
+
 
 class Nim(Environment):
     def __init__(self, num_stones, max_choice):

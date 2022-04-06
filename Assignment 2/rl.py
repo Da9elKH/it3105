@@ -1,14 +1,16 @@
-from agents import ANNAgent, MCTSAgent, CNNAgent
-from environments import Hex, HexGUI
-from networks import ANN, CNN
-from memory import Memory
-from tqdm import trange
-from topp import TOPP
-from mcts import MCTS
-from config import App
 import random
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import trange
+
+from agents import ANNAgent, MCTSAgent, CNNAgent
+from config import App
+from environments import Hex, HexGUI
+from mcts import MCTS
+from memory import Memory
+from networks import ANN, CNN
+from topp import TOPP
 
 
 class ReinforcementLearning:

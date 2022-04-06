@@ -1,9 +1,10 @@
-from .agent import Agent
-from environments import Environment
+import numpy as np
+
+from config import App
+from environment import Environment
 from misc import LiteModel
 from networks.cnn import CNN
-from config import App
-import numpy as np
+from agent import Agent
 
 
 class CNNAgent(Agent):

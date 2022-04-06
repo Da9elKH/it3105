@@ -1,10 +1,11 @@
+import logging
+
+from agents import CNNAgent
 from config import App
 from environments import Hex, HexGUI
-from agents import ANNAgent, CNNAgent
-from networks import CNN, ANN
-from topp import TOPP
+from networks import CNN
 from oht import OHT
-import logging
+from topp import TOPP
 
 
 def setup_logger():

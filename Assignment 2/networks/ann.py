@@ -1,16 +1,17 @@
+from os import path
+from typing import Tuple
+
+import numpy as np
 from tensorflow.keras import Sequential
+from tensorflow.keras.activations import get as activation_get
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import load_model
 from tensorflow.keras.models import Model
-from tensorflow.keras.activations import get as activation_get
+from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import get as optimizer_get
-from typing import Tuple
-from os import path
-from misc import LiteModel
+
 from config import App, ROOT_DIR
-import numpy as np
+from misc import LiteModel
 
 MODELS_FOLDER = f"{ROOT_DIR}/models/"
 

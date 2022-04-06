@@ -1,6 +1,6 @@
-from collections import deque
 import math
 import random
+from collections import deque
 
 
 class Memory:

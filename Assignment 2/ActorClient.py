@@ -1,6 +1,5 @@
 import argparse
 import contextlib
-import functools
 import getpass
 import json
 import logging
@@ -11,8 +10,6 @@ import socket
 import ssl
 import struct
 import sys
-import warnings
-
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 

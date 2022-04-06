@@ -1,12 +1,12 @@
 # Python imports
-import cProfile
 import numpy
-from topp import TOPP
-from agents import MCTSAgent
-from mcts import MCTS
-
 # Cython imports
 import pyximport
+
+from agents import MCTSAgent
+from mcts import MCTS
+from topp import TOPP
+
 pyximport.install(
     setup_args={
         "include_dirs": [numpy.get_include()],

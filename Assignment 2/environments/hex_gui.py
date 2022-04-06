@@ -1,14 +1,16 @@
+import math
+from copy import deepcopy
+from typing import Callable
 from typing import Union, Dict, Tuple, List
+
 import arcade
 import arcade.gui
 import networkx as nx
-import math
-from agents import Agent
-from copy import deepcopy
+import numpy as np
+
+from agent import Agent
 from environments import Hex, PLAYERS
 from misc import Move
-from typing import Callable
-import numpy as np
 
 RED_COLOR = "fc766a"
 RED_COLOR_LIGHT = "fed1cd"

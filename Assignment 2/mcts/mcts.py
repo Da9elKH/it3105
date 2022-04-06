@@ -1,14 +1,17 @@
-from .node import Node
-from environments import Environment
-from misc import Move
-from agents import Agent
-import random
-import numpy as np
-import time
-import graphviz
-from typing import List
-from config import App
 import logging
+import random
+import time
+from typing import List
+
+import graphviz
+import numpy as np
+
+from agent import Agent
+from config import App
+from environment import Environment
+from misc import Move
+from .node import Node
+
 logger = logging.getLogger(__name__)
 logger.setLevel(App.config("mcts.log_level"))
 

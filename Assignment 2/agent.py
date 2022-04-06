@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from environments import Environment
+from environment import Environment
 from misc import Move
 import numpy as np
 import random

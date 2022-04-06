@@ -1,10 +1,11 @@
 from functools import lru_cache
+from typing import TypeVar
+
 import numpy as np
 from unionfind import UnionFind
-from environments import Environment
-from misc import Move
-from typing import TypeVar, Generic, Tuple, List
 
+from environment import Environment
+from misc import Move
 
 PLAYERS = (1, -1)
 

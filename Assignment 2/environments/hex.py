@@ -1,10 +1,11 @@
-from functools import lru_cache
-import numpy as np
-from unionfind import UnionFind
-from environments.environment import Environment
-from misc import Move
-from config import App
 import logging
+import numpy as np
+from environment import Environment
+from functools import lru_cache
+from unionfind import UnionFind
+from config import App
+from misc import Move
+
 logger = logging.getLogger(__name__)
 logger.setLevel(App.config("environment.log_level"))
 PLAYERS = (1, -1)

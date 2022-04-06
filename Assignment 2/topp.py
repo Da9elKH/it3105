@@ -1,12 +1,14 @@
-from agents import Agent
-from environments import Environment
-from tqdm import trange
 from itertools import permutations
 from typing import Dict
-from tabulate import tabulate
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sbn
+from tabulate import tabulate
+from tqdm import trange
+
+from agent import Agent
+from environment import Environment
 
 
 class TOPP:

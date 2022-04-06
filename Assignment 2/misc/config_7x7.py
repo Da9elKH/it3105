@@ -1,5 +1,5 @@
-from functools import reduce
 import logging
+from functools import reduce
 
 
 class App:

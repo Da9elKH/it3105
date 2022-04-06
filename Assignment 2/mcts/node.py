@@ -1,7 +1,7 @@
-from typing import TypeVar, Generic, Optional
-from misc.types import Move
-import numpy as np
 import math
+from typing import TypeVar, Generic, Optional
+
+from misc.types import Move
 
 TNode = TypeVar("TNode", bound="Node")
 

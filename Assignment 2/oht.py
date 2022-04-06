@@ -1,9 +1,10 @@
+import numpy as np
+
 from ActorClient import ActorClient
 from agents import CNNAgent
+from config import App
 from environments import Hex
 from networks import CNN
-from config import App
-import numpy as np
 
 
 class OHT(ActorClient):

@@ -3,7 +3,7 @@ import matplotlib.pylab as plt
 from operator import itemgetter
 from utils.state import State, StateConstructor
 from utils.types import Action, ActionList
-from environments.environment import ProblemEnvironment
+from environment import ProblemEnvironment
 
 
 class TheGambler(ProblemEnvironment):

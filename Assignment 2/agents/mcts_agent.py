@@ -1,7 +1,7 @@
-from .agent import Agent
-from environments.environment import Environment
-from mcts.mcts import MCTS
 from config import App
+from environment import Environment
+from mcts.mcts import MCTS
+from agent import Agent
 
 
 class MCTSAgent(Agent):

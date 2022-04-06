@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Callable, List
 from misc.types import Move
 import numpy as np
-
 TEnvironment = TypeVar("TEnvironment", bound="Environment")
 
 

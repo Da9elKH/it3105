@@ -1,4 +1,4 @@
-from environments.environment import ProblemEnvironment
+from environment import ProblemEnvironment
 from itertools import permutations
 import arcade
 import arcade.gui

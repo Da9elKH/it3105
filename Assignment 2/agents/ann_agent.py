@@ -1,9 +1,10 @@
-from agents import Agent
-from networks import ANN
-from environments import Environment
-from misc import LiteModel
-from config import App
 import numpy as np
+
+from agent import Agent
+from config import App
+from environment import Environment
+from misc import LiteModel
+from networks import ANN
 
 
 class ANNAgent(Agent):

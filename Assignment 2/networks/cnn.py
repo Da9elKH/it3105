@@ -1,52 +1,19 @@
-from os import path
 from typing import Tuple
-
-import numpy as np
 from tensorflow.keras import Sequential, layers
 from tensorflow.keras.activations import get as activation_get
 from tensorflow.keras.layers import Conv2D, BatchNormalization, Flatten, Input, Softmax
 from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.models import Model
-from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import get as optimizer_get
 from tensorflow.keras.regularizers import l2
-
 from config import App, ROOT_DIR
-from misc import LiteModel
-
+from .network import Network
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(App.config("cnn.log_level"))
 MODELS_FOLDER = f"{ROOT_DIR}/models/"
 
 
-class CNN:
-    def __init__(self, model: Model):
-        self.model = model
-
-    def predict(self, x):
-        if not isinstance(x, np.ndarray):
-            x = np.array(x)
-
-        if isinstance(self.model, LiteModel):
-            return self.model.predict_single(x)
-        else:
-            return self.model(x)
-
-    def train_on_batch(self, x, y):
-        if not isinstance(x, np.ndarray):
-            x = np.array(x)
-        if not isinstance(y, np.ndarray):
-            y = np.array(y)
-
-        return self.model.train_on_batch(x, y, return_dict=True)
-
-    def fit(self, x, y, **params):
-        return self.model.fit(x, y, **params)
-
-
-    @classmethod
-    def from_file(cls, filename):
-        """ Returns a network instance from file """
-        model = load_model(MODELS_FOLDER + filename)
-        return cls(model=model)
+class CNN(Network):
 
     @classmethod
     def build_from_config(cls, input_shape: tuple, output_size: int, **params):
@@ -97,15 +64,7 @@ class CNN:
         model.add(Softmax())
         model.compile(loss=CategoricalCrossentropy(), optimizer=opt, metrics=["accuracy", "KLDivergence"])
 
+        logger.info("Created following model:")
+        model.summary(print_fn=logger.info)
+
         return cls(model=model)
-
-    """ MISC """
-    def save_model(self, suffix):
-        num = 1
-        name = lambda n: "(%d) " % n + f"{self.__class__.__name__}_" + suffix + ".h5"
-
-        if self.model is not None:
-            while path.exists(MODELS_FOLDER + name(num)):
-                num += 1
-            self.model.save(MODELS_FOLDER + name(num))
-        return name(num)

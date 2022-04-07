@@ -125,7 +125,7 @@ class Hex(Environment):
             # Broadcast move to agents following this state
             self.broadcast_move(move)
         else:
-            raise ValueError(f"Move {move} is not allowed")
+            logger.warning(f"Move {move} is not allowed")
 
     @property
     def legal_moves(self):

@@ -8,10 +8,10 @@ from networks import CNN
 
 
 class OHT(ActorClient):
-    def __init__(self, auth, qualify, environment=None):
+    def __init__(self, auth, qualify, environment=None, agent=None):
         super().__init__(auth=auth, qualify=qualify)
-        self.environment = environment if environment else Hex(size=App.config("environment.size"))
-        self.agent = CNNAgent(environment=self.environment, network=CNN.from_file(App.config("oht.agent")))
+        self.environment = environment if environment else Hex(size=7)
+        self.agent = agent if agent else CNNAgent(environment=self.environment, network=CNN.from_file("7x7/(1) CNN_S7_B1638.h5"))
 
     def handle_game_start(self, start_player):
         player = {1: 1, 2: -1}

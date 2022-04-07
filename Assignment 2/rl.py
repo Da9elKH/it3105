@@ -15,12 +15,30 @@ from collections import deque
 from environments import Hex, HexGUI
 from networks import ANN, CNN
 from mcts import MCTS
-from agents import MCTSAgent, ANNAgent, CNNAgent, BufferAgent
+from agents import MCTSAgent, ANNAgent, CNNAgent
 from misc import LiteModel
 from tensorflow.keras import Sequential
 from config import App
-from copy import deepcopy
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(App.config("rl.log_level"))
+
+"""
+    === Reinforcement Learner ===
+    
+    These classes work in parallel to generate data with Monte-Carlo Tree Search
+    It consists of:
+        1. Storage
+        2. Buffer
+        3. Learner
+        4. Workers
+
+    The Workers gets weights from the storage, and runs MCTS and saves the states to the buffer.
+    The Learner takes a sample from the buffer, trains and stores the weights in the storage.
+    This continues until the storage-flag "terminate" occurs, and the process finishes.
+
+"""
 
 class GameHistory:
     def __init__(self):
@@ -112,17 +130,19 @@ class Buffer:
     def get_game(self, i):
         return self.buffer[i]
 
-    def _solid_save(self, game_history):
-        with open("cases/flat_states.txt", "ab") as f:
-            np.savetxt(f, game_history.flat_states)
-        with open("cases/distributions.txt", "ab") as f:
-            np.savetxt(f, game_history.distributions)
-        with open("cases/results.txt", "ab") as f:
-            np.savetxt(f, game_history.results)
-        with open("cases/moves.txt", "ab") as f:
-            np.savetxt(f, game_history.moves)
-        with open("cases/players.txt", "ab") as f:
-            np.savetxt(f, game_history.players)
+    @staticmethod
+    def _solid_save(game_history):
+        if App.config("rbuf.save_samples"):
+            with open("cases/flat_states.txt", "ab") as f:
+                np.savetxt(f, game_history.flat_states)
+            with open("cases/distributions.txt", "ab") as f:
+                np.savetxt(f, game_history.distributions)
+            with open("cases/results.txt", "ab") as f:
+                np.savetxt(f, game_history.results)
+            with open("cases/moves.txt", "ab") as f:
+                np.savetxt(f, game_history.moves)
+            with open("cases/players.txt", "ab") as f:
+                np.savetxt(f, game_history.players)
 
 
 @ray.remote(num_cpus=1, num_gpus=len(gpus))
@@ -166,7 +186,7 @@ class Trainer:
             if self.training_step >= max_training_steps:
                 storage.set_info.remote("terminate", True)
 
-            while (ray.get(buffer.get_num_games.remote()) / max(1, self.training_step)) < self.new_games_per_training:
+            while (ray.get(buffer.get_num_games.remote()) / max(1, self.training_step)) <= self.new_games_per_training:
                 time.sleep(0.5)
 
     def single_run(self, storage, buffer):
@@ -190,7 +210,7 @@ class Trainer:
             train_x.astype(np.float32),
             train_y.astype(np.float32),
             batch_size=len(train_x),
-            epochs=self.epochs
+            epochs=self.epochs,
         )
 
         # Track results
@@ -360,9 +380,8 @@ class ReinforcementLearner:
         while not ray.get(self.storage.get_info.remote("terminate")):
             time.sleep(10)
             samples = ray.get(self.buffer.get_num_tot_samples.remote())
-            print(f"Num samples: {samples}")
+            logger.info(f"Current sample size: {samples}")
 
         self.saved_models = ray.get(self.storage.get_info.remote("models"))
-
         ray.shutdown()
-        print("Completed")
+        logger.info("RL Completed")

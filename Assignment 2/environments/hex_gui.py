@@ -120,15 +120,11 @@ class HexGUI(arcade.Window):
             self._agent = deepcopy(self.agent)
 
         if self.agent and not self.environment.is_game_over:
-            action, dist = self.agent.get_move(greedy=True)
-            if dist is not None:
-                size = (self.environment.size, self.environment.size)
-                dist = np.array(dist).reshape((self.environment.size, self.environment.size))
-                for location in list(np.ndindex(size)):
-                    self.state_meta[location] = str(round(dist[location], 2))
+            action, _ = self.agent.get_move(greedy=True)
+
             if action is not None:
                 self.environment.play(action)
-            self.draw_board()
+                self.draw_board()
 
     def draw_board(self):
         arcade.start_render()
@@ -379,11 +375,14 @@ class StateRendering:
                 )
 
 
-# TODO: REMOVE THIS (?)
 if __name__ == "__main__":
     from agents import CNNAgent
     from networks import CNN
 
-    env = Hex(size=7)
-    gui = HexGUI(environment=env, agent=CNNAgent(environment=env, network=CNN.from_file("7x7/(1) CNN_S7_B1533.h5")))
+    #env = Hex(size=7)
+    #gui = HexGUI(environment=env, agent=CNNAgent(environment=env, network=CNN.from_file("7x7/(1) CNN_S7_B1533.h5")))
+    #gui.run()
+
+    env = Hex(size=12)
+    gui = HexGUI(environment=env)
     gui.run()

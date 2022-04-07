@@ -2,9 +2,6 @@ from environment import Environment
 from agent import Agent
 
 
-# TODO: FIX THIS
-
-
 class BufferAgent(Agent):
     def __init__(self, environment: Environment = None):
         super().__init__(environment)

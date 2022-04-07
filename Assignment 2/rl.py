@@ -19,7 +19,9 @@ from agents import MCTSAgent, ANNAgent, CNNAgent
 from misc import LiteModel
 from tensorflow.keras import Sequential
 from config import App
+from environment import Environment
 
+import os
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(App.config("rl.log_level"))
@@ -105,21 +107,33 @@ class Storage:
 class Buffer:
     def __init__(self):
         self.buffer = deque([], maxlen=App.config("rbuf.queue_size"))
+        self.buffer_test = []
         self.num_games = 0
         self.num_tot_samples = 0
+        self.num_tests = 0
 
     def store(self, game_history, storage):
-        self.buffer.append(game_history)
-        self.num_games += 1
-        self.num_tot_samples += len(game_history.flat_states)
-        storage.set_info.remote("num_games", self.num_games)
+        if random.random() <= App.config("rbuf.test_size") or (App.config("rbuf.test_size") > 0 and self.num_tests == 0):
+            self.buffer_test.append(game_history)
+            self.num_tests += 1
+        else:
+            self.buffer.append(game_history)
+            self.num_games += 1
+            self.num_tot_samples += len(game_history.flat_states)
+            storage.set_info.remote("num_games", self.num_games)
         self._solid_save(game_history)
 
-    def get_batch(self, sample_size):
-        return np.random.choice(self.buffer, size=min(sample_size, len(self.buffer)), replace=False)
+    def get_batch(self, sample_size, test=False):
+        if test:
+            return np.random.choice(self.buffer_test, size=min(sample_size, len(self.buffer_test)), replace=False)
+        else:
+            return np.random.choice(self.buffer, size=min(sample_size, len(self.buffer)), replace=False)
 
-    def get_all(self):
-        return list(self.buffer)
+    def get_all(self, test=False):
+        if test:
+            return self.buffer_test
+        else:
+            return list(self.buffer)
 
     def get_num_tot_samples(self):
         return self.num_tot_samples
@@ -127,8 +141,8 @@ class Buffer:
     def get_num_games(self):
         return self.num_games
 
-    def get_game(self, i):
-        return self.buffer[i]
+    def get_num_tests(self):
+        return self.num_tests
 
     @staticmethod
     def _solid_save(game_history):
@@ -175,7 +189,7 @@ class Trainer:
             self.initialize_ann(storage)
 
         # Wait for the first data to be stored in storage
-        while ray.get(buffer.get_num_games.remote()) == 0:
+        while ray.get(buffer.get_num_games.remote()) == 0 or (ray.get(buffer.get_num_tests.remote()) == 0 and App.config("rbuf.test_size") > 0):
             time.sleep(2)
 
         # While not terminated, run the training loop
@@ -197,7 +211,7 @@ class Trainer:
         start_time = time.time()
 
         # Load training and test data and create numpy arrays
-        train = ray.get(buffer.get_batch.remote(self.batch_size))
+        train = ray.get(buffer.get_batch.remote(self.batch_size, test=False))
         train_x, train_y = np.array(train[0].states), np.array(train[0].distributions)
 
         for i in range(1, len(train)):
@@ -213,6 +227,25 @@ class Trainer:
             epochs=self.epochs,
         )
 
+        test_stats = {}
+        if App.config("rbuf.test_size") > 0:
+            num_tests = ray.get(buffer.get_num_tests.remote())
+            test = ray.get(buffer.get_batch.remote(self.batch_size, test=True))
+            test_x, test_y = np.array(train[0].states), np.array(train[0].distributions)
+
+            # Run evaluation to track the performance
+            test_results = self.network.model.evaluate(
+                test_x.astype(np.float32),
+                test_y.astype(np.float32),
+                batch_size=len(test)
+            )
+            test_stats = {
+                "test_loss": test_results[0],
+                "test_accuracy": test_results[1],
+                "test_kullback_leibler_divergence": test_results[2],
+                "tests": num_tests,
+            }
+
         # Track results
         if App.config("rl.track"):
             wandb.log({
@@ -224,6 +257,7 @@ class Trainer:
                 "training_step": self.training_step,
                 "epsilon": epsilon,
                 "training_time": time.time() - start_time,
+                **test_stats
             })
 
         # Store weights, checkpoint and new epsilon
@@ -251,11 +285,11 @@ class Trainer:
         storage.append_info.remote("models", model_name)
 
 
-@ray.remote(num_cpus=1)
+@ray.remote(num_cpus=1, num_gpus=0)
 class MCTSWorker:
-    def __init__(self, model):
+    def __init__(self, model, size):
         self.initialized = False
-        self.environment = Hex(size=App.config("environment.size"))
+        self.environment = Hex(size=size)
         self.model = LiteModel.from_keras_model(model)
 
         if App.config("rl.use_cnn"):
@@ -346,9 +380,9 @@ class MCTSWorker:
 
 
 class ReinforcementLearner:
-    def __init__(self):
-        ray.init(num_cpus=4)
-        self.environment = Hex(size=App.config("environment.size"))
+    def __init__(self, environment: Environment):
+        ray.init(num_cpus=App.config("cpus"))
+        self.environment = environment.copy()
         self.saved_models = []
 
         if App.config("rl.use_cnn"):
@@ -366,7 +400,10 @@ class ReinforcementLearner:
         self.buffer = Buffer.remote()
         self.storage = Storage.remote()
         self.trainer = Trainer.remote(self.network)
-        self.workers = [MCTSWorker.remote(self.network.model) for _ in range(2)]
+
+        # With -2 and cpus = os.cpu_count, buffer and storage share cpu
+        cpus = App.config("cpus") - 2
+        self.workers = [MCTSWorker.remote(self.network.model, self.environment.size) for _ in range(cpus)]
         self.gui = None
 
     def run(self):

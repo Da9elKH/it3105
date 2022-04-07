@@ -55,7 +55,7 @@ def run():
         # REINFORCEMENT LEARNING
         if task == "RL":
             logger.info("Starting Reinforcement Learning")
-            rl = ReinforcementLearner()
+            rl = ReinforcementLearner(environment=environment)
             rl.run()
             models = rl.saved_models
 
